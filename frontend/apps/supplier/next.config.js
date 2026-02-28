@@ -36,6 +36,16 @@ const nextConfig = {
       },
     ]
   },
+  rewrites: async () => {
+    return {
+      beforeFiles: [
+        {
+          source: "/api/:path*",
+          destination: "http://localhost:8000/api/:path*",
+        },
+      ],
+    }
+  },
 }
 
 module.exports = nextConfig
