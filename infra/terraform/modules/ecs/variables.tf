@@ -1,0 +1,14 @@
+variable "project_name" { type = string }
+variable "environment" { type = string }
+variable "vpc_id" { type = string }
+variable "private_subnet_ids" { type = list(string) }
+variable "security_group_ids" { type = list(string) }
+variable "ecs_instance_type" { type = string }
+variable "ecs_desired_capacity" { type = number }
+variable "ecs_min_capacity" { type = number }
+variable "ecs_max_capacity" { type = number }
+variable "container_image" { type = string }
+variable "container_port" { type = number }
+variable "container_cpu" { type = number }
+variable "container_memory" { type = number }
+variable "environment_variables" { type = map(string) }

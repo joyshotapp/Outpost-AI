@@ -1,0 +1,58 @@
+# Example Terraform variables - copy and customize for your environment
+
+aws_region     = "ap-southeast-1"
+project_name   = "factory-insider"
+environment    = "dev"
+
+# VPC Configuration
+vpc_cidr           = "10.0.0.0/16"
+availability_zones = ["ap-southeast-1a", "ap-southeast-1b"]
+enable_nat_gateway = true
+enable_vpc_endpoints = true
+
+# RDS PostgreSQL Configuration
+rds_engine_version          = "16.1"
+rds_instance_class          = "db.t4g.micro"
+rds_allocated_storage       = 20
+rds_database_name           = "factory_insider"
+rds_master_username         = "postgres"
+rds_master_password         = "change-me-in-production"
+rds_enable_backup           = true
+rds_backup_retention_period = 7
+rds_enable_encryption       = true
+rds_multi_az                = false
+rds_publicly_accessible     = false
+
+# ElastiCache Redis Configuration
+elasticache_engine_version       = "7.0"
+elasticache_node_type            = "cache.t4g.micro"
+elasticache_num_cache_nodes      = 1
+elasticache_parameter_group_name = "default.redis7"
+elasticache_automatic_failover   = false
+elasticache_automatic_backup     = true
+elasticache_snapshot_retention   = 5
+
+# S3 Configuration
+s3_create_buckets      = true
+s3_enable_versioning   = true
+s3_enable_encryption   = true
+s3_enable_public_access = false
+s3_bucket_prefix       = "factory-insider"
+
+# ECS Configuration
+ecs_instance_type      = "t3.micro"
+ecs_desired_capacity   = 2
+ecs_min_capacity       = 1
+ecs_max_capacity       = 4
+ecs_container_image    = "your-registry/factory-insider:latest"
+ecs_container_port     = 8000
+ecs_container_cpu      = 256
+ecs_container_memory   = 512
+
+ecs_environment_variables = {
+  ENVIRONMENT = "dev"
+  DEBUG       = "true"
+}
+
+# CloudWatch Configuration
+log_retention_days = 7
