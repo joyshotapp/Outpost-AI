@@ -1,16 +1,22 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useSupplier } from '@/hooks/useSupplier'
 
 interface ProfileContactInfoProps {
   onSave: () => void
   isSaving: boolean
+  supplierId?: string
 }
 
 export default function ProfileContactInfo({
   onSave,
-  isSaving,
+  isSaving: parentIsSaving,
+  supplierId,
 }: ProfileContactInfoProps) {
+  const { supplier, loading, updateSupplier } = useSupplier()
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     industry: 'Electronics & Computing',
     mainProducts: 'Mechanical parts, CNC machining, fasteners',
@@ -23,9 +29,42 @@ export default function ProfileContactInfo({
     bankDetails: 'Available upon request',
   })
 
+  useEffect(() => {
+    if (supplier) {
+      setFormData({
+        industry: supplier.industry || '',
+        mainProducts: supplier.mainProducts || '',
+        description: supplier.description || '',
+        employeeCount: supplier.employeeCount || '',
+        establishedYear: supplier.establishedYear?.toString() || '',
+        certifications: supplier.certifications?.join(', ') || '',
+        businessLicense: supplier.businessLicense || '',
+        taxId: supplier.taxId || '',
+        bankDetails: supplier.bankDetails || '',
+      })
+    }
+  }, [supplier])
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const handleSave = async () => {
+    setIsSaving(true)
+    setError(null)
+    try {
+      await updateSupplier({
+        ...formData,
+        certifications: formData.certifications.split(',').map((c) => c.trim()),
+        establishedYear: parseInt(formData.establishedYear),
+      })
+      onSave()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -190,17 +229,24 @@ export default function ProfileContactInfo({
         </div>
       </div>
 
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-body-sm text-red-800">{error}</p>
+        </div>
+      )}
+
       {/* Action Buttons */}
       <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
         <button className="px-6 py-2 text-body-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
           Cancel
         </button>
         <button
-          onClick={onSave}
-          disabled={isSaving}
+          onClick={handleSave}
+          disabled={isSaving || loading}
           className="px-6 py-2 text-body-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
-          {isSaving && (
+          {(isSaving || loading) && (
             <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle
                 className="opacity-25"
@@ -217,7 +263,7 @@ export default function ProfileContactInfo({
               />
             </svg>
           )}
-          {isSaving ? 'Saving...' : 'Save Changes'}
+          {isSaving || loading ? 'Saving...' : 'Save Changes'}
         </button>
       </div>
     </div>

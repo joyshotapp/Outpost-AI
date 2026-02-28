@@ -1,72 +1,81 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Image from 'next/image'
+import { useSupplier } from '@/hooks/useSupplier'
 
 interface ProfileImagesProps {
   onSave: () => void
   isSaving: boolean
+  supplierId?: string
 }
 
 export default function ProfileImages({
   onSave,
-  isSaving,
+  isSaving: parentIsSaving,
+  supplierId,
 }: ProfileImagesProps) {
+  const { supplier, uploadLogo, uploadCoverImage, uploadGalleryImages } = useSupplier()
   const [logo, setLogo] = useState<string | null>(null)
   const [coverImage, setCoverImage] = useState<string | null>(null)
   const [galleryImages, setGalleryImages] = useState<string[]>([])
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (supplier) {
+      if (supplier.logoUrl) setLogo(supplier.logoUrl)
+      if (supplier.coverImageUrl) setCoverImage(supplier.coverImageUrl)
+    }
+  }, [supplier])
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      simulateUpload(file, 'logo', setLogo)
+    if (!file) return
+
+    setIsSaving(true)
+    setError(null)
+    try {
+      const url = await uploadLogo(file)
+      setLogo(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload logo')
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      simulateUpload(file, 'cover', setCoverImage)
+    if (!file) return
+
+    setIsSaving(true)
+    setError(null)
+    try {
+      const url = await uploadCoverImage(file)
+      setCoverImage(url)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload cover image')
+    } finally {
+      setIsSaving(false)
     }
   }
 
-  const handleGalleryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files) {
-      Array.from(files).forEach((file, index) => {
-        simulateUpload(file, `gallery-${index}`, (url) => {
-          setGalleryImages((prev) => [...prev, url])
-        })
-      })
+    if (!files) return
+
+    setIsSaving(true)
+    setError(null)
+    try {
+      const urls = await uploadGalleryImages(Array.from(files))
+      setGalleryImages((prev) => [...prev, ...urls])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to upload gallery images')
+    } finally {
+      setIsSaving(false)
     }
-  }
-
-  const simulateUpload = (
-    file: File,
-    key: string,
-    callback: (url: string) => void
-  ) => {
-    setUploadProgress((prev) => ({ ...prev, [key]: 0 }))
-
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        const current = prev[key] || 0
-        const next = Math.min(current + Math.random() * 30, 95)
-        if (next >= 95) {
-          clearInterval(interval)
-          setUploadProgress((p) => ({ ...p, [key]: 100 }))
-          callback(URL.createObjectURL(file))
-          setTimeout(() => {
-            setUploadProgress((p) => {
-              const { [key]: _, ...rest } = p
-              return rest
-            })
-          }, 500)
-        }
-        return { ...prev, [key]: next }
-      })
-    }, 200)
   }
 
   const removeGalleryImage = (index: number) => {
@@ -251,6 +260,13 @@ export default function ProfileImages({
           </label>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-body-sm text-red-800">{error}</p>
+        </div>
+      )}
 
       {/* Action Buttons */}
       <div className="flex justify-end gap-3 pt-6 border-t border-gray-200">
