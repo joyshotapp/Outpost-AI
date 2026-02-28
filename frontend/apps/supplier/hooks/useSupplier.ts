@@ -95,13 +95,14 @@ export const useSupplier = (): UseSupplierReturn => {
 
       try {
         // Step 1: Request presigned URL
-        const presignedResponse = await fetch('/api/v1/presigned-url', {
+        const presignedResponse = await fetch('/api/v1/uploads/presigned-url', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             filename: file.name,
             content_type: file.type,
-            file_type: fileType,
+            resource_type: fileType,
+            file_size: file.size,
           }),
         })
 
@@ -109,36 +110,38 @@ export const useSupplier = (): UseSupplierReturn => {
           throw new Error('Failed to get presigned URL')
         }
 
-        const { url, file_url } = await presignedResponse.json()
+        const { url, fields } = await presignedResponse.json()
 
-        // Step 2: Upload file to S3
+        // Step 2: Upload file to S3 using presigned POST (multipart form data)
+        const formData = new FormData()
+        Object.entries(fields as Record<string, string>).forEach(([key, value]) => {
+          formData.append(key, value)
+        })
+        formData.append('file', file)
+
         const uploadResponse = await fetch(url, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': file.type,
-          },
-          body: file,
+          method: 'POST',
+          body: formData,
         })
 
         if (!uploadResponse.ok) {
           throw new Error('Failed to upload file to S3')
         }
 
-        // Step 3: Verify upload with backend
-        const verifyResponse = await fetch('/api/v1/upload-status', {
+        // Step 3: Verify upload and get the final download URL
+        const object_key = fields['key'] as string
+        const verifyResponse = await fetch('/api/v1/uploads/status', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            file_url,
-            status: 'completed',
-          }),
+          body: JSON.stringify({ object_key }),
         })
 
         if (!verifyResponse.ok) {
           throw new Error('Failed to verify upload')
         }
 
-        return file_url
+        const { download_url } = await verifyResponse.json()
+        return download_url as string
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Upload failed')
         throw err

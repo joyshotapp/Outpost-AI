@@ -87,7 +87,9 @@ export default function Step1CompanyInfo({
       .toLowerCase()
       .trim()
       .replace(/\s+/g, '-')
-      .replace(/[^\w-]/g, '')
+      .replace(/[^a-z0-9-]/g, '')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
   }
 
   const handleCompanyNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

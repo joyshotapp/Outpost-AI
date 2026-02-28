@@ -1,8 +1,9 @@
 """Pydantic schemas for API request/response validation"""
 
+import re
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 class UserRegisterRequest(BaseModel):
@@ -60,7 +61,6 @@ class LoginResponse(BaseModel):
 class SupplierCreateRequest(BaseModel):
     """Supplier creation request"""
 
-    user_id: int
     company_name: str
     company_slug: str
     website: Optional[str] = None
@@ -76,6 +76,16 @@ class SupplierCreateRequest(BaseModel):
     main_products: Optional[str] = None
     manufacturing_capacity: Optional[str] = None
     lead_time_days: Optional[int] = None
+
+    @field_validator("company_slug")
+    @classmethod
+    def validate_slug(cls, v: str) -> str:
+        if not re.match(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$", v):
+            raise ValueError(
+                "Slug must only contain lowercase letters, numbers, and hyphens, "
+                "and must start and end with a letter or number"
+            )
+        return v
 
 
 class SupplierUpdateRequest(BaseModel):
@@ -261,6 +271,63 @@ class VideoListResponse(BaseModel):
     is_published: bool
     view_count: int
     created_at: str
+
+    class Config:
+        from_attributes = True
+
+
+# RFQ Schemas
+class RFQCreateRequest(BaseModel):
+    """Request for creating a new RFQ"""
+
+    title: str
+    description: str
+    specifications: Optional[str] = None
+    quantity: Optional[int] = None
+    unit: Optional[str] = None
+    required_delivery_date: Optional[str] = None
+    # Note: attachment_url should come from S3 presigned upload, not in request body
+
+
+class RFQResponse(BaseModel):
+    """Response for RFQ details"""
+
+    id: int
+    buyer_id: int
+    supplier_id: Optional[int]
+    title: str
+    description: str
+    specifications: Optional[str]
+    quantity: Optional[int]
+    unit: Optional[str]
+    required_delivery_date: Optional[str]
+    attachment_url: Optional[str]
+    status: str
+    lead_score: Optional[int]
+    lead_grade: Optional[str]
+    parsed_data: Optional[str]
+    pdf_vision_data: Optional[str]
+    ai_summary: Optional[str]
+    draft_reply: Optional[str]
+    created_at: str
+    updated_at: str
+
+    class Config:
+        from_attributes = True
+
+
+class RFQListResponse(BaseModel):
+    """Response for RFQ list (lightweight)"""
+
+    id: int
+    buyer_id: int
+    supplier_id: Optional[int]
+    title: str
+    status: str
+    lead_score: Optional[int]
+    lead_grade: Optional[str]
+    created_at: str
+    updated_at: str
 
     class Config:
         from_attributes = True

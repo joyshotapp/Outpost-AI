@@ -29,10 +29,16 @@ export default function RegisterPage() {
     setError(null)
 
     try {
+      const token = localStorage.getItem('access_token')
+      if (!token) {
+        throw new Error('You must be logged in to register a supplier')
+      }
+
       const response = await fetch('/api/v1/suppliers', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           company_name: data.companyName,
@@ -44,10 +50,10 @@ export default function RegisterPage() {
           city: data.city,
           industry: data.industry,
           certifications: data.certifications,
-          employee_count: data.employeeCount || null,
+          number_of_employees: data.employeeCount ? parseInt(data.employeeCount, 10) : null,
           established_year: data.establishedYear || null,
           main_products: data.mainProducts,
-          description: data.description || null,
+          company_description: data.description || null,
         }),
       })
 

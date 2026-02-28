@@ -22,12 +22,15 @@ router = APIRouter(prefix="/suppliers", tags=["suppliers"])
 @router.post("", response_model=SupplierResponse, status_code=status.HTTP_201_CREATED)
 async def create_supplier(
     request: SupplierCreateRequest,
+    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> SupplierResponse:
     """Create a new supplier"""
+    normalized_slug = request.company_slug.lower()
+
     # Check if company slug already exists
     result = await db.execute(
-        select(Supplier).filter(Supplier.company_slug == request.company_slug)
+        select(Supplier).filter(Supplier.company_slug == normalized_slug)
     )
     if result.scalars().first():
         raise HTTPException(
@@ -35,19 +38,11 @@ async def create_supplier(
             detail="Company slug already exists",
         )
 
-    # Verify user exists
-    user_result = await db.execute(select(User).filter(User.id == request.user_id))
-    if not user_result.scalars().first():
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-
     # Create supplier
     supplier = Supplier(
-        user_id=request.user_id,
+        user_id=current_user.id,
         company_name=request.company_name,
-        company_slug=request.company_slug,
+        company_slug=normalized_slug,
         website=request.website,
         phone=request.phone,
         email=request.email,

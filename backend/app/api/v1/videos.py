@@ -5,7 +5,6 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -108,9 +107,9 @@ async def list_videos(
         query = query.filter(Video.video_type == video_type)
     if is_published is not None:
         query = query.filter(Video.is_published == is_published)
-
-    # Only show published videos by default in public list
-    query = query.filter(Video.is_published == True)
+    else:
+        # Only show published videos by default in public list
+        query = query.filter(Video.is_published == True)
 
     result = await db.execute(
         query.order_by(Video.created_at.desc()).offset(skip).limit(limit)
@@ -127,9 +126,7 @@ async def get_video(
 ) -> VideoResponse:
     """Get video by ID with all language versions"""
     result = await db.execute(
-        select(Video)
-        .filter(Video.id == video_id)
-        .options(selectinload(Video.__table__.c).selectinload(VideoLanguageVersion))
+        select(Video).filter(Video.id == video_id)
     )
     video = result.scalars().first()
 
@@ -173,7 +170,7 @@ async def update_video(
     )
     supplier = supplier_result.scalars().first()
 
-    if supplier.user_id != current_user.id:
+    if not supplier or supplier.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to update this video",
@@ -221,7 +218,7 @@ async def add_language_version(
     )
     supplier = supplier_result.scalars().first()
 
-    if supplier.user_id != current_user.id:
+    if not supplier or supplier.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this video",
@@ -307,7 +304,7 @@ async def delete_language_version(
     )
     supplier = supplier_result.scalars().first()
 
-    if supplier.user_id != current_user.id:
+    if not supplier or supplier.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to modify this video",
@@ -356,7 +353,7 @@ async def delete_video(
     )
     supplier = supplier_result.scalars().first()
 
-    if supplier.user_id != current_user.id:
+    if not supplier or supplier.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not authorized to delete this video",

@@ -144,7 +144,7 @@ export default function VideoList({ videos }: VideoListProps) {
               <div className="space-y-1">
                 <p className="text-body-xs font-medium text-gray-700">Languages:</p>
                 <div className="flex flex-wrap gap-1">
-                  {video.languages.slice(0, 3).map((lang) => (
+                  {video.languages?.slice(0, 3).map((lang) => (
                     <span
                       key={lang.code}
                       className="inline-block px-2 py-1 bg-primary-50 text-primary-700 text-body-xs rounded"
@@ -152,9 +152,9 @@ export default function VideoList({ videos }: VideoListProps) {
                       {lang.code.toUpperCase()}
                     </span>
                   ))}
-                  {video.languages.length > 3 && (
+                  {(video.languages?.length ?? 0) > 3 && (
                     <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-body-xs rounded">
-                      +{video.languages.length - 3}
+                      +{(video.languages?.length ?? 0) - 3}
                     </span>
                   )}
                 </div>

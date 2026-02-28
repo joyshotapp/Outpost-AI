@@ -3,8 +3,20 @@
 import React, { useState, useRef } from 'react'
 
 interface VideoUploaderProps {
-  onSuccess: (video: any) => void
+  supplierId: number
+  onSuccess: (video: VideoRecord) => void
   onCancel: () => void
+}
+
+interface VideoRecord {
+  id: number
+  title: string
+  video_type: string | null
+  video_url: string
+  thumbnail_url: string | null
+  is_published: boolean
+  view_count: number
+  created_at: string
 }
 
 interface Language {
@@ -15,6 +27,7 @@ interface Language {
 }
 
 export default function VideoUploader({
+  supplierId,
   onSuccess,
   onCancel,
 }: VideoUploaderProps) {
@@ -95,36 +108,111 @@ export default function VideoUploader({
       return
     }
 
+    const token = localStorage.getItem('access_token')
+    if (!token) {
+      alert('You must be logged in to upload videos')
+      return
+    }
+
     setIsUploading(true)
+    setUploadProgress(0)
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 95) {
-          clearInterval(interval)
-          return 95
-        }
-        return prev + Math.random() * 20
+    try {
+      // Step 1: Request presigned URL
+      setUploadProgress(10)
+      const presignedResponse = await fetch('/api/v1/uploads/presigned-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          filename: file.name,
+          content_type: file.type,
+          resource_type: 'videos',
+          file_size: file.size,
+        }),
       })
-    }, 500)
 
-    // Simulate upload completion
-    setTimeout(() => {
+      if (!presignedResponse.ok) {
+        throw new Error('Failed to get upload URL')
+      }
+
+      const { url, fields } = await presignedResponse.json()
+
+      // Step 2: Upload file to S3 using presigned POST
+      setUploadProgress(30)
+      const formData = new FormData()
+      Object.entries(fields as Record<string, string>).forEach(([key, value]) => {
+        formData.append(key, value)
+      })
+      formData.append('file', file)
+
+      const uploadResponse = await fetch(url, {
+        method: 'POST',
+        body: formData,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload video to storage')
+      }
+
+      // Step 3: Verify upload and get download URL
+      setUploadProgress(70)
+      const object_key = fields['key'] as string
+      const verifyResponse = await fetch('/api/v1/uploads/status', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ object_key }),
+      })
+
+      if (!verifyResponse.ok) {
+        throw new Error('Failed to verify upload')
+      }
+
+      const { download_url } = await verifyResponse.json()
+
+      // Step 4: Create video record in database
+      setUploadProgress(85)
+      const languageVersions = languages
+        .filter((l) => l.title.trim() !== '')
+        .map((l) => ({
+          language_code: l.code,
+          title: l.title,
+          subtitle_url: l.subtitle || null,
+          voice_url: null,
+        }))
+
+      const videoResponse = await fetch('/api/v1/videos', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          supplier_id: supplierId,
+          title: videoTitle,
+          video_url: download_url,
+          video_type: videoType,
+          language_versions: languageVersions,
+        }),
+      })
+
+      if (!videoResponse.ok) {
+        throw new Error('Failed to save video')
+      }
+
+      const createdVideo = await videoResponse.json()
       setUploadProgress(100)
-      clearInterval(interval)
+      onSuccess(createdVideo)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Upload failed')
+    } finally {
       setIsUploading(false)
-
-      // Call success callback
-      onSuccess({
-        id: Math.random().toString(),
-        title: videoTitle,
-        type: videoType,
-        duration: 0,
-        uploadedAt: new Date(),
-        isPublished: false,
-        languages,
-      })
-    }, 3000)
+    }
   }
 
   return (

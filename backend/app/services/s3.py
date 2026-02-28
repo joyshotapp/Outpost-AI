@@ -8,6 +8,9 @@ import boto3
 from botocore.exceptions import ClientError
 
 from app.config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class S3Service:
@@ -216,6 +219,41 @@ class S3Service:
             return True
         except ClientError:
             return False
+
+    async def upload_rfq_attachment(
+        self, file_content: bytes, filename: str
+    ) -> str:
+        """
+        Upload RFQ attachment (PDF) to S3
+
+        Args:
+            file_content: File content as bytes
+            filename: Original filename
+
+        Returns:
+            S3 download URL for the uploaded file
+        """
+        try:
+            # Generate object key
+            timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+            object_key = f"rfqs/{timestamp}-{filename}"
+
+            # Upload to S3
+            self.s3_client.put_object(
+                Bucket=self.bucket,
+                Key=object_key,
+                Body=file_content,
+                ContentType="application/pdf",
+            )
+
+            logger.info(f"Uploaded RFQ attachment to S3: {object_key}")
+
+            # Return public URL
+            url = self.get_object_url(object_key, expiration_hours=24 * 30)  # 30-day expiry
+            return url
+        except ClientError as e:
+            logger.error(f"Failed to upload RFQ attachment: {str(e)}")
+            raise ValueError(f"Failed to upload attachment: {str(e)}")
 
 
 # Singleton instance
