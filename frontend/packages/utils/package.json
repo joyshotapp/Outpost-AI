@@ -1,0 +1,22 @@
+{
+  "name": "@factory-insider/utils",
+  "version": "0.1.0",
+  "description": "Shared Utility Functions",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "scripts": {
+    "lint": "eslint . --ext .ts,.tsx",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "jest": "^29.0.0"
+  }
+}

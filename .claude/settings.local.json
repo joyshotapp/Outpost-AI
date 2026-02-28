@@ -8,7 +8,8 @@
       "Bash(git add -A)",
       "Bash(git commit:*)",
       "Bash(git add README.md QUICKSTART.md CLAUDE.md development_plan.md technical_architecture.md PROJECT_STRUCTURE.md docker-compose.yml .env.local .gitignore .github/ frontend/ backend/ infra/ docs/)",
-      "Bash(git config -l)"
+      "Bash(git config -l)",
+      "Bash(cd /c/Users/User/Desktop/\"Outpost AI\")"
     ]
   }
 }

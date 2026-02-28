@@ -1,0 +1,21 @@
+{
+  "name": "factory-insider-frontend",
+  "version": "0.1.0",
+  "description": "Factory Insider Frontend Monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0",
+    "turbo": "^1.10.0"
+  }
+}

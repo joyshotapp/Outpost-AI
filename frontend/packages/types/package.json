@@ -1,0 +1,17 @@
+{
+  "name": "@factory-insider/types",
+  "version": "0.1.0",
+  "description": "Shared Type Definitions",
+  "private": true,
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": {
+      "types": "./index.ts",
+      "default": "./index.ts"
+    }
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}
