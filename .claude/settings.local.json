@@ -56,7 +56,9 @@
       "Bash(python -m pytest tests/test_claude_rfq_parsing.py -v)",
       "Bash(python -m pytest tests/test_claude_rfq_parsing.py tests/test_pdf_parsing.py -v)",
       "Bash(python -m pytest tests/test_claude_rfq_parsing.py tests/test_pdf_parsing.py -v --tb=short)",
-      "Bash(python -m pytest tests/test_apollo_service.py -v --tb=short)"
+      "Bash(python -m pytest tests/test_apollo_service.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_lead_scoring.py -v --tb=short)",
+      "Bash(python -m pytest tests/test_lead_scoring.py::TestLeadScoringEngine::test_score_rfq_specifications_minimal -v)"
     ]
   }
 }
