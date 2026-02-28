@@ -9,7 +9,11 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "jest"
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "jest --coverage --watchAll=false",
+    "test:watch": "jest --watch",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "react": "^18.2.0",

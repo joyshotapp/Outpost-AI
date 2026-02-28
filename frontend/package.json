@@ -12,7 +12,11 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "lint": "turbo run lint",
-    "type-check": "turbo run type-check"
+    "type-check": "turbo run type-check",
+    "format:check": "turbo run format:check",
+    "format": "turbo run format",
+    "test:e2e": "turbo run test:e2e",
+    "clean": "turbo clean && rm -rf node_modules"
   },
   "devDependencies": {
     "typescript": "^5.3.0",

@@ -1,0 +1,100 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: factory-insider-postgres-staging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-factory_insider}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - postgres_data_staging:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - factory-insider
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: factory-insider-redis-staging
+    ports:
+      - "6380:6379"
+    networks:
+      - factory-insider
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis}
+    volumes:
+      - redis_data_staging:/data
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: factory-insider-elasticsearch-staging
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9201:9200"
+    networks:
+      - factory-insider
+    restart: unless-stopped
+    volumes:
+      - elasticsearch_data_staging:/usr/share/elasticsearch/data
+
+  backend:
+    image: ghcr.io/${{ github.repository }}/backend:${DOCKER_TAG:-latest}
+    container_name: factory-insider-backend-staging
+    depends_on:
+      - postgres
+      - redis
+      - elasticsearch
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-factory_insider}
+      REDIS_URL: redis://default:${REDIS_PASSWORD:-redis}@redis:6379/0
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ENVIRONMENT: staging
+      DEBUG: "false"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      HEYGEN_API_KEY: ${HEYGEN_API_KEY}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
+      AWS_REGION: ${AWS_REGION:-ap-southeast-1}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET}
+    ports:
+      - "8001:8000"
+    networks:
+      - factory-insider
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  nginx:
+    image: nginx:alpine
+    container_name: factory-insider-nginx-staging
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/docker/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - backend
+    networks:
+      - factory-insider
+    restart: unless-stopped
+
+volumes:
+  postgres_data_staging:
+  redis_data_staging:
+  elasticsearch_data_staging:
+
+networks:
+  factory-insider:
+    driver: bridge
