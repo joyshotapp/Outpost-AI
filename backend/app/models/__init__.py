@@ -7,6 +7,7 @@ from app.models.supplier import Supplier
 from app.models.buyer import Buyer
 from app.models.rfq import RFQ
 from app.models.video import Video
+from app.models.video_language import VideoLanguageVersion
 from app.models.visitor_event import VisitorEvent
 from app.models.outbound_campaign import OutboundCampaign
 from app.models.content_item import ContentItem
@@ -21,6 +22,7 @@ __all__ = [
     "Buyer",
     "RFQ",
     "Video",
+    "VideoLanguageVersion",
     "VisitorEvent",
     "OutboundCampaign",
     "ContentItem",

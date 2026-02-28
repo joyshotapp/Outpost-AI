@@ -22,7 +22,8 @@
       "Bash(python -m pytest tests/test_uploads.py::TestS3PresignedUrl::test_generate_presigned_url_invalid_mime_type -v)",
       "Bash(python -m pytest tests/test_uploads.py::TestS3PresignedUrl::test_generate_presigned_url_invalid_mime_type -xvs)",
       "Bash(python -m pytest tests/test_suppliers.py -v --tb=no)",
-      "Bash(python -m pytest tests/test_suppliers.py::TestSupplierCRUD::test_create_supplier_success -xvs)"
+      "Bash(python -m pytest tests/test_suppliers.py::TestSupplierCRUD::test_create_supplier_success -xvs)",
+      "Bash(python -m pytest tests/test_videos.py::TestVideoCreation::test_create_video_success -xvs)"
     ]
   }
 }

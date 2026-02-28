@@ -174,3 +174,93 @@ class S3UploadStatusResponse(BaseModel):
     exists: bool
     object_key: Optional[str] = None
     download_url: Optional[str] = None
+
+
+# Video Schemas
+class VideoLanguageVersionRequest(BaseModel):
+    """Request for creating/updating video language version"""
+
+    language_code: str  # e.g., 'en', 'zh', 'es', 'fr'
+    title: str
+    description: Optional[str] = None
+    subtitle_url: Optional[str] = None
+    voice_url: Optional[str] = None
+
+
+class VideoLanguageVersionResponse(BaseModel):
+    """Response for video language version"""
+
+    id: int
+    video_id: int
+    language_code: str
+    title: str
+    description: Optional[str]
+    subtitle_url: Optional[str]
+    voice_url: Optional[str]
+    created_at: str
+    updated_at: str
+
+    class Config:
+        from_attributes = True
+
+
+class VideoCreateRequest(BaseModel):
+    """Request for creating a video"""
+
+    supplier_id: int
+    title: str
+    description: Optional[str] = None
+    video_url: str
+    thumbnail_url: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    video_type: Optional[str] = None  # product, company, testimonial, etc.
+    language_versions: Optional[list[VideoLanguageVersionRequest]] = None
+
+
+class VideoUpdateRequest(BaseModel):
+    """Request for updating a video"""
+
+    title: Optional[str] = None
+    description: Optional[str] = None
+    video_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
+    duration_seconds: Optional[int] = None
+    video_type: Optional[str] = None
+    is_published: Optional[bool] = None
+
+
+class VideoResponse(BaseModel):
+    """Response for video with all details"""
+
+    id: int
+    supplier_id: int
+    title: str
+    description: Optional[str]
+    video_url: str
+    thumbnail_url: Optional[str]
+    duration_seconds: Optional[int]
+    video_type: Optional[str]
+    is_published: bool
+    view_count: int
+    created_at: str
+    updated_at: str
+    language_versions: list[VideoLanguageVersionResponse] = []
+
+    class Config:
+        from_attributes = True
+
+
+class VideoListResponse(BaseModel):
+    """Response for video list (lightweight)"""
+
+    id: int
+    supplier_id: int
+    title: str
+    video_type: Optional[str]
+    thumbnail_url: Optional[str]
+    is_published: bool
+    view_count: int
+    created_at: str
+
+    class Config:
+        from_attributes = True
