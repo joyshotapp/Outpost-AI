@@ -3,10 +3,12 @@
 import json
 import logging
 from typing import Dict, Any, Optional
+from asyncio import run as async_run
 
 from celery import shared_task
 
 from app.services.claude import get_claude_service
+from app.services.slack import get_slack_service
 
 logger = logging.getLogger(__name__)
 
@@ -161,10 +163,45 @@ def process_rfq_complete_pipeline(self, rfq_id: int) -> Dict[str, Any]:
 
         logger.info(f"RFQ pipeline completed successfully for RFQ #{rfq_id} - Grade {lead_grade}, Score {lead_score}")
 
+        # Send Slack notification for A-grade leads
+        if lead_grade == "A":
+            try:
+                slack_service = get_slack_service()
+                slack_result = async_run(slack_service.send_lead_notification(
+                    rfq_id=rfq_id,
+                    lead_grade=lead_grade,
+                    lead_score=lead_score,
+                    buyer_company_name=parsed_data.get("buyer_company"),
+                    product_summary=parsed_data.get("product_name"),
+                    rfq_text_preview=rfq.description[:200] if rfq.description else None,
+                    scoring_breakdown=pipeline_results["stages"]["scoring"].get("breakdown"),
+                ))
+                pipeline_results["slack_notification"] = slack_result
+                if slack_result.get("success"):
+                    logger.info(f"Slack notification sent for A-grade RFQ #{rfq_id}")
+            except Exception as e:
+                logger.error(f"Failed to send Slack notification for RFQ #{rfq_id}: {str(e)}")
+                pipeline_results["slack_notification"] = {
+                    "success": False,
+                    "error": str(e),
+                }
+
         return pipeline_results
 
     except Exception as e:
         logger.error(f"RFQ pipeline failed for #{rfq_id}: {str(e)}")
+
+        # Send error notification to Slack
+        try:
+            slack_service = get_slack_service()
+            async_run(slack_service.send_pipeline_error_notification(
+                rfq_id=rfq_id,
+                failed_stage="complete_pipeline",
+                error_message=str(e),
+            ))
+        except Exception as slack_error:
+            logger.error(f"Failed to send error notification for RFQ #{rfq_id}: {str(slack_error)}")
+
         # Retry with exponential backoff
         raise self.retry(exc=e, countdown=2 ** self.request.retries)
 
