@@ -1,3 +1,7 @@
+'use client'
+
+import Link from 'next/link'
+
 export default function Home() {
   return (
     <main className="flex-1 w-full">
@@ -32,9 +36,12 @@ export default function Home() {
                 intelligence.
               </p>
               <div className="flex gap-4">
-                <button className="px-8 py-4 bg-primary-700 text-white rounded-md hover:bg-primary-600 font-semibold">
-                  Start Searching
-                </button>
+                <Link
+                  href="/rfq/new"
+                  className="px-8 py-4 bg-primary-700 text-white rounded-md hover:bg-primary-600 font-semibold inline-block text-center"
+                >
+                  Create RFQ
+                </Link>
                 <button className="px-8 py-4 border-2 border-primary-700 text-primary-700 rounded-md hover:bg-primary-50 font-semibold">
                   View Demo
                 </button>
@@ -82,9 +89,12 @@ export default function Home() {
           <p className="text-body-lg mb-8">
             Join thousands of buyers sourcing from verified suppliers
           </p>
-          <button className="px-8 py-4 bg-white text-primary-700 rounded-md hover:bg-gray-100 font-semibold">
-            Start Free
-          </button>
+          <Link
+            href="/rfq/new"
+            className="inline-block px-8 py-4 bg-white text-primary-700 rounded-md hover:bg-gray-100 font-semibold"
+          >
+            Create Your First RFQ
+          </Link>
         </div>
       </section>
 
