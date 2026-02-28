@@ -1,0 +1,17 @@
+"""Health check routes"""
+
+from fastapi import APIRouter
+
+router = APIRouter(tags=["health"])
+
+
+@router.get("/health")
+async def health_check() -> dict:
+    """Health check endpoint"""
+    return {
+        "status": "ok",
+        "service": "factory-insider-api",
+    }
+
+
+__all__ = ["router"]
