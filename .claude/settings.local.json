@@ -9,7 +9,20 @@
       "Bash(git commit:*)",
       "Bash(git add README.md QUICKSTART.md CLAUDE.md development_plan.md technical_architecture.md PROJECT_STRUCTURE.md docker-compose.yml .env.local .gitignore .github/ frontend/ backend/ infra/ docs/)",
       "Bash(git config -l)",
-      "Bash(cd /c/Users/User/Desktop/\"Outpost AI\")"
+      "Bash(cd /c/Users/User/Desktop/\"Outpost AI\")",
+      "Bash(git add SPRINT_PROGRESS.md)",
+      "Bash(cd /c/Users/User/Desktop/Outpost AI)",
+      "Bash(git add backend/app/models/rfq.py backend/app/models/video.py backend/app/models/visitor_event.py backend/app/models/outbound_campaign.py backend/app/models/content_item.py backend/app/models/conversation.py backend/alembic/versions/002_business_tables.py backend/app/models/__init__.py)",
+      "Bash(git add backend/app/security.py backend/app/schemas.py backend/app/dependencies.py backend/app/api/v1/auth.py backend/app/api/v1/__init__.py backend/app/main.py backend/app/database.py backend/requirements.txt backend/.env.local.example backend/tests/)",
+      "Bash(git add .github/workflows/ .github/SETUP_SECRETS.md docker-compose.staging.yml docs/CI_CD_PIPELINE.md frontend/apps/*/package.json frontend/package.json)",
+      "Bash(git add backend/app/api/v1/suppliers.py backend/app/api/v1/__init__.py backend/app/schemas.py backend/tests/test_suppliers.py)",
+      "Bash(pip install boto3 botocore -q)",
+      "Bash(python -m pytest tests/test_uploads.py -v)",
+      "Bash(python -m pytest tests/test_uploads.py::TestS3ServiceValidation -v)",
+      "Bash(python -m pytest tests/test_uploads.py::TestS3PresignedUrl::test_generate_presigned_url_invalid_mime_type -v)",
+      "Bash(python -m pytest tests/test_uploads.py::TestS3PresignedUrl::test_generate_presigned_url_invalid_mime_type -xvs)",
+      "Bash(python -m pytest tests/test_suppliers.py -v --tb=no)",
+      "Bash(python -m pytest tests/test_suppliers.py::TestSupplierCRUD::test_create_supplier_success -xvs)"
     ]
   }
 }

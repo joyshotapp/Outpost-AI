@@ -141,3 +141,36 @@ class SupplierListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# S3 Upload Schemas
+class S3PresignedUrlRequest(BaseModel):
+    """Request for generating S3 presigned URL"""
+
+    filename: str
+    resource_type: str  # 'videos', 'documents', etc.
+    content_type: str  # MIME type
+    file_size: int  # File size in bytes
+
+
+class S3PresignedUrlResponse(BaseModel):
+    """Response with S3 presigned URL and metadata"""
+
+    url: str
+    fields: dict
+    expires_at: str
+    max_file_size: int
+
+
+class S3UploadStatusRequest(BaseModel):
+    """Request to check upload status"""
+
+    object_key: str
+
+
+class S3UploadStatusResponse(BaseModel):
+    """Response with upload status"""
+
+    exists: bool
+    object_key: Optional[str] = None
+    download_url: Optional[str] = None

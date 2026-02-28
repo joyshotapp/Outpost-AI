@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.gzip import GZIPMiddleware
 
 from app.api.v1 import router as v1_router
 from app.config import settings
@@ -46,9 +45,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# Gzip compression
-app.add_middleware(GZIPMiddleware, minimum_size=1000)
 
 # Include API v1 routes
 app.include_router(v1_router)
