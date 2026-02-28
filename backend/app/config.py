@@ -72,6 +72,15 @@ class Settings(BaseSettings):
         "CELERY_RESULT_BACKEND", f"{REDIS_URL.rstrip('0')}1"
     )
 
+    # Sentry Error Tracking
+    SENTRY_DSN: Optional[str] = os.getenv("SENTRY_DSN")
+    SENTRY_ENABLED: bool = SENTRY_DSN is not None and ENVIRONMENT != "development"
+    SENTRY_ENVIRONMENT: str = os.getenv("SENTRY_ENVIRONMENT", ENVIRONMENT)
+    SENTRY_TRACES_SAMPLE_RATE: float = float(
+        os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")
+    )
+    SENTRY_DEBUG: bool = DEBUG
+
     class Config:
         env_file = ".env.local"
         env_file_encoding = "utf-8"

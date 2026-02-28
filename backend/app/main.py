@@ -8,6 +8,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1 import router as v1_router
 from app.config import settings
 from app.database import dispose_db, init_db
+from app.sentry_init import init_sentry
+
+# Initialize Sentry error tracking
+init_sentry()
 
 
 @asynccontextmanager
