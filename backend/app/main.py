@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZIPMiddleware
 
+from app.api.v1 import router as v1_router
 from app.config import settings
 from app.database import dispose_db, init_db
 
@@ -48,6 +49,9 @@ app.add_middleware(
 
 # Gzip compression
 app.add_middleware(GZIPMiddleware, minimum_size=1000)
+
+# Include API v1 routes
+app.include_router(v1_router)
 
 
 @app.get("/health")

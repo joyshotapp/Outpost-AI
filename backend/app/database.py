@@ -43,6 +43,10 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+# Alias for consistency
+get_db = get_session
+
+
 async def init_db() -> None:
     """Initialize database (create tables)"""
     async with engine.begin() as conn:
