@@ -31,17 +31,25 @@ export default function NewRFQPage() {
   const handleSubmitRFQ = async (formData: RFQFormData) => {
     setIsLoading(true)
     try {
+      // Build multipart/form-data payload matching the backend Form(...) fields
+      const payload = new FormData()
+      payload.append('title', formData.product_name)
+      payload.append('description', formData.description)
+      if (formData.quantity) payload.append('quantity', formData.quantity)
+      if (formData.unit) payload.append('unit', formData.unit)
+      if (formData.delivery_timeframe) payload.append('required_delivery_date', formData.delivery_timeframe)
+      if (formData.specifications && Object.keys(formData.specifications).some(k => formData.specifications[k as keyof typeof formData.specifications])) {
+        payload.append('specifications', JSON.stringify(formData.specifications))
+      }
+
       // Call the backend API to create RFQ
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/rfqs`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          // Do not set Content-Type — let the browser set it with the correct boundary for multipart/form-data
         },
-        body: JSON.stringify({
-          description: formData.description,
-          specifications: formData.specifications,
-        }),
+        body: payload,
       })
 
       if (!response.ok) {

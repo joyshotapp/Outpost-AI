@@ -16,99 +16,106 @@ interface RFQData {
   status: 'new' | 'viewed' | 'replied' | 'archived'
 }
 
-// Mock data - in production this would come from the API
-const MOCK_RFQS: RFQData[] = [
-  {
-    id: 1,
-    product_name: 'CNC Machined Aluminum Parts',
-    buyer_company: 'TechCorp Manufacturing',
-    lead_grade: 'A',
-    lead_score: 85,
-    description: 'High precision aluminum components with tight tolerances, ISO 9001 required',
-    quantity: '1000 pieces',
-    created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    status: 'new',
-  },
-  {
-    id: 2,
-    product_name: 'Stainless Steel Fasteners',
-    buyer_company: 'Auto Parts Inc',
-    lead_grade: 'B',
-    lead_score: 68,
-    description: 'M8 and M10 stainless steel bolts with regular tolerances',
-    quantity: '5000 pieces',
-    created_at: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-    status: 'viewed',
-  },
-  {
-    id: 3,
-    product_name: 'Plastic Injection Molded Parts',
-    buyer_company: 'Consumer Goods Ltd',
-    lead_grade: 'C',
-    lead_score: 45,
-    description: 'Generic plastic components, standard quality acceptable',
-    quantity: '10000 pieces',
-    created_at: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString(),
-    status: 'replied',
-  },
-  {
-    id: 4,
-    product_name: 'Medical Device Components',
-    buyer_company: 'MedTech Solutions',
-    lead_grade: 'A',
-    lead_score: 92,
-    description: 'FDA approved medical-grade titanium implants with biocompatible coating',
-    quantity: '500 pieces',
-    created_at: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
-    status: 'new',
-  },
-  {
-    id: 5,
-    product_name: 'Electronics Circuit Boards',
-    buyer_company: 'TechGear Electronics',
-    lead_grade: 'B',
-    lead_score: 72,
-    description: '4-layer PCB boards with RoHS compliance',
-    quantity: '2000 pieces',
-    created_at: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    status: 'new',
-  },
-]
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+
+function mapApiRFQ(rfq: Record<string, unknown>): RFQData {
+  return {
+    id: rfq.id as number,
+    product_name: rfq.title as string,
+    buyer_company: undefined,
+    lead_grade: ((rfq.lead_grade as string) || 'C') as 'A' | 'B' | 'C',
+    lead_score: (rfq.lead_score as number) || 0,
+    description: (rfq.description as string) || '',
+    quantity: rfq.quantity
+      ? `${rfq.quantity} ${rfq.unit || 'pcs'}`
+      : 'N/A',
+    created_at: rfq.created_at as string,
+    status: ((rfq.status as string) || 'new') as 'new' | 'viewed' | 'replied' | 'archived',
+  }
+}
 
 export default function RFQInboxPage() {
   const t = useTranslations('rfq')
-  const [rfqs, setRfqs] = useState<RFQData[]>(MOCK_RFQS)
-  const [loading, setLoading] = useState(false)
+  const [rfqs, setRfqs] = useState<RFQData[]>([])
+  const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState({
-    total: MOCK_RFQS.length,
-    new: MOCK_RFQS.filter(r => r.status === 'new').length,
-    gradeA: MOCK_RFQS.filter(r => r.lead_grade === 'A').length,
+    total: 0,
+    new: 0,
+    gradeA: 0,
   })
 
-  // In production, fetch RFQs from API
   useEffect(() => {
-    // Mock API call
-    // const fetchRFQs = async () => {
-    //   try {
-    //     const response = await fetch('/api/v1/rfqs', {
-    //       headers: {
-    //         'Authorization': `Bearer ${localStorage.getItem('access_token')}`
-    //       }
-    //     })
-    //     const data = await response.json()
-    //     setRfqs(data)
-    //   } catch (error) {
-    //     console.error('Failed to fetch RFQs:', error)
-    //   }
-    // }
-    // fetchRFQs()
+    const fetchRFQs = async () => {
+      setLoading(true)
+      try {
+        const token = localStorage.getItem('access_token')
+        const headers: HeadersInit = {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        }
+
+        const listResponse = await fetch(`${API_BASE_URL}/api/v1/rfqs`, { headers })
+        if (!listResponse.ok) {
+          throw new Error(`Failed to fetch RFQs: ${listResponse.statusText}`)
+        }
+        const listData = await listResponse.json()
+
+        // Fetch full RFQ details in parallel to get description and quantity
+        const detailPromises = listData.map((r: { id: number }) =>
+          fetch(`${API_BASE_URL}/api/v1/rfqs/${r.id}`, { headers }).then(res => res.json())
+        )
+        const details = await Promise.all(detailPromises)
+
+        const rfqData = details.map(mapApiRFQ)
+        setRfqs(rfqData)
+        setStats({
+          total: rfqData.length,
+          new: rfqData.filter(r => r.status === 'new').length,
+          gradeA: rfqData.filter(r => r.lead_grade === 'A').length,
+        })
+      } catch (error) {
+        console.error('Failed to fetch RFQs:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchRFQs()
   }, [])
 
   const handleLoadMore = async () => {
     setLoading(true)
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setLoading(false)
+    try {
+      const token = localStorage.getItem('access_token')
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      }
+
+      const skip = rfqs.length
+      const response = await fetch(
+        `${API_BASE_URL}/api/v1/rfqs?skip=${skip}&limit=20`,
+        { headers }
+      )
+
+      if (!response.ok) {
+        throw new Error(`Failed to load more RFQs: ${response.statusText}`)
+      }
+
+      const listData = await response.json()
+      if (listData.length === 0) return
+
+      const detailPromises = listData.map((r: { id: number }) =>
+        fetch(`${API_BASE_URL}/api/v1/rfqs/${r.id}`, { headers }).then(res => res.json())
+      )
+      const details = await Promise.all(detailPromises)
+      const newRFQData = details.map(mapApiRFQ)
+      setRfqs(prev => [...prev, ...newRFQData])
+    } catch (error) {
+      console.error('Failed to load more RFQs:', error)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

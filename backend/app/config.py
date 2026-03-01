@@ -4,11 +4,17 @@ import os
 from functools import lru_cache
 from typing import Optional
 
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
+
+    model_config = SettingsConfigDict(
+        env_file=".env.local",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
 
     # Application
     APP_NAME: str = "Factory Insider API"
@@ -48,6 +54,7 @@ class Settings(BaseSettings):
 
     # API Keys
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
+    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
     HEYGEN_API_KEY: Optional[str] = os.getenv("HEYGEN_API_KEY")
     CLAY_API_KEY: Optional[str] = os.getenv("CLAY_API_KEY")
     APOLLO_API_KEY: Optional[str] = os.getenv("APOLLO_API_KEY")
@@ -80,11 +87,6 @@ class Settings(BaseSettings):
         os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.1")
     )
     SENTRY_DEBUG: bool = DEBUG
-
-    class Config:
-        env_file = ".env.local"
-        env_file_encoding = "utf-8"
-
 
 @lru_cache()
 def get_settings() -> Settings:

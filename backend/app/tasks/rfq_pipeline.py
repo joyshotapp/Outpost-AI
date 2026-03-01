@@ -1,16 +1,42 @@
 """Celery tasks for RFQ processing pipeline orchestration"""
 
+import asyncio
+import concurrent.futures
 import json
 import logging
 from typing import Dict, Any, Optional
-from asyncio import run as async_run
+from urllib.parse import urlparse
 
 from celery import shared_task
+from sqlalchemy import select
 
+from app.database import async_session_maker
+from app.models.rfq import RFQ
 from app.services.claude import get_claude_service
+from app.services.apollo import get_apollo_service
+from app.services.lead_scoring import get_lead_scoring_engine
+from app.services.draft_reply_generator import get_draft_reply_generator
 from app.services.slack import get_slack_service
 
 logger = logging.getLogger(__name__)
+
+
+def _run_async(coro):
+    """Run an async coroutine from a synchronous Celery task context.
+
+    Handles both standard (prefork) and async-based (gevent/eventlet) Celery workers
+    by detecting whether an event loop is already running and spawning a thread if so.
+    """
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(asyncio.run, coro)
+                return future.result()
+        else:
+            return loop.run_until_complete(coro)
+    except RuntimeError:
+        return asyncio.run(coro)
 
 
 @shared_task(bind=True, max_retries=3)
@@ -87,7 +113,7 @@ def process_rfq_complete_pipeline(self, rfq_id: int) -> Dict[str, Any]:
             company_data = company_result.get("company")
             pipeline_results["stages"]["company_research"] = {
                 "success": True,
-                "company_name": company_data.get("company_name"),
+                "company_name": company_data.get("company_name") if company_data else None,
                 "cached": company_result.get("cached"),
             }
         else:
@@ -167,7 +193,7 @@ def process_rfq_complete_pipeline(self, rfq_id: int) -> Dict[str, Any]:
         if lead_grade == "A":
             try:
                 slack_service = get_slack_service()
-                slack_result = async_run(slack_service.send_lead_notification(
+                slack_result = _run_async(slack_service.send_lead_notification(
                     rfq_id=rfq_id,
                     lead_grade=lead_grade,
                     lead_score=lead_score,
@@ -194,7 +220,7 @@ def process_rfq_complete_pipeline(self, rfq_id: int) -> Dict[str, Any]:
         # Send error notification to Slack
         try:
             slack_service = get_slack_service()
-            async_run(slack_service.send_pipeline_error_notification(
+            _run_async(slack_service.send_pipeline_error_notification(
                 rfq_id=rfq_id,
                 failed_stage="complete_pipeline",
                 error_message=str(e),
@@ -211,15 +237,7 @@ def parse_rfq_text_task(self, rfq_text: str) -> Dict[str, Any]:
     """Task 3.3: Parse RFQ text with Claude"""
     try:
         claude_service = get_claude_service()
-        # Note: This would need to be made sync-compatible or use async_to_sync
-        # For now, this is a placeholder that would be called from a sync context
-        result = {
-            "success": True,
-            "parsed_data": {
-                "product_name": "Parsed from RFQ",
-                "quantity": None,
-            },
-        }
+        result = _run_async(claude_service.analyze_rfq_text(rfq_text))
         return result
     except Exception as e:
         logger.error(f"Text parsing task failed: {str(e)}")
@@ -230,17 +248,14 @@ def parse_rfq_text_task(self, rfq_text: str) -> Dict[str, Any]:
 def analyze_rfq_pdf_task(self, attachment_url: str, rfq_text: str) -> Dict[str, Any]:
     """Task 3.4: Analyze PDF with vision and Textract"""
     try:
-        # Extract S3 key from presigned URL
-        # This is a simplified version - in production would parse the actual URL
-        logger.info(f"Analyzing PDF from {attachment_url[:50]}...")
+        # Extract S3 object key from presigned URL path component
+        parsed = urlparse(attachment_url)
+        s3_key = parsed.path.lstrip('/')
 
-        result = {
-            "success": True,
-            "vision_analysis": {
-                "dimensions": "Extracted from PDF",
-            },
-            "pages_analyzed": 2,
-        }
+        logger.info(f"Analyzing PDF from S3 key: {s3_key[:50]}...")
+
+        claude_service = get_claude_service()
+        result = _run_async(claude_service.analyze_rfq_pdf(s3_key, rfq_text))
         return result
     except Exception as e:
         logger.error(f"PDF analysis task failed: {str(e)}")
@@ -258,16 +273,8 @@ def enrich_buyer_company_task(self, company_name: Optional[str]) -> Dict[str, An
                 "error": "No company name provided",
             }
 
-        # In production, would call Apollo service
-        result = {
-            "success": True,
-            "company": {
-                "company_name": company_name,
-                "employee_count": 500,
-                "industry": "Manufacturing",
-            },
-            "cached": False,
-        }
+        apollo_service = get_apollo_service()
+        result = _run_async(apollo_service.enrich_company_profile(company_name))
         return result
     except Exception as e:
         logger.error(f"Company enrichment task failed: {str(e)}")
@@ -283,20 +290,12 @@ def calculate_lead_score_task(
 ) -> Dict[str, Any]:
     """Task 3.6: Calculate lead score"""
     try:
-        # In production, would call LeadScoringEngine
-        score = 65
-        grade = "B" if score >= 50 else "C"
-
-        result = {
-            "success": True,
-            "lead_score": score,
-            "lead_grade": grade,
-            "scores": {
-                "intent": 65,
-                "company": 60,
-                "rfq": 70,
-            },
-        }
+        scoring_engine = get_lead_scoring_engine()
+        result = _run_async(scoring_engine.score_rfq(
+            rfq_text=rfq_text,
+            buyer_company_name=buyer_company_name,
+            parsed_rfq_data=parsed_data,
+        ))
         return result
     except Exception as e:
         logger.error(f"Lead scoring task failed: {str(e)}")
@@ -312,49 +311,83 @@ def generate_draft_reply_task(
 ) -> Dict[str, Any]:
     """Task 3.7: Generate draft reply"""
     try:
-        # In production, would call DraftReplyGenerator
-        draft = f"Thank you for your RFQ. We can support this project at Grade {lead_grade}."
-
-        result = {
-            "success": True,
-            "draft_reply": draft,
-        }
+        generator = get_draft_reply_generator()
+        result = _run_async(generator.generate_reply(
+            rfq_data=parsed_data,
+            supplier_profile=supplier_profile,
+            lead_grade=lead_grade,
+        ))
         return result
     except Exception as e:
         logger.error(f"Draft reply task failed: {str(e)}")
         raise self.retry(exc=e, countdown=2 ** self.request.retries)
 
 
-def get_rfq_sync(rfq_id: int) -> Optional[Dict[str, Any]]:
-    """Get RFQ data synchronously (wrapper for sync context)"""
-    # This would run in sync context via async_to_sync or similar
-    # For now, returns mock data
-    return {
-        "id": rfq_id,
-        "description": "Test RFQ",
-        "attachment_url": None,
-    }
+async def _get_rfq_async(rfq_id: int) -> Optional[RFQ]:
+    """Fetch RFQ from database asynchronously."""
+    async with async_session_maker() as session:
+        result = await session.get(RFQ, rfq_id)
+        return result
 
 
-def update_rfq_with_results(
+def get_rfq_sync(rfq_id: int) -> Optional[RFQ]:
+    """Get RFQ record synchronously for Celery task context."""
+    return _run_async(_get_rfq_async(rfq_id))
+
+
+async def _update_rfq_async(
     rfq_id: int,
-    parsed_data: Dict[str, Any],
+    parsed_data: Optional[Dict[str, Any]],
     pdf_vision_data: Optional[Dict[str, Any]],
     lead_score: int,
     lead_grade: str,
     draft_reply: Optional[str],
 ) -> bool:
-    """Update RFQ database record with all analysis results"""
-    try:
-        # In production, would update the RFQ model in database
+    """Update RFQ database record asynchronously."""
+    async with async_session_maker() as session:
+        rfq = await session.get(RFQ, rfq_id)
+        if not rfq:
+            logger.error(f"RFQ #{rfq_id} not found for update")
+            return False
+
+        if parsed_data:
+            rfq.parsed_data = json.dumps(parsed_data, ensure_ascii=False)
+        if pdf_vision_data:
+            rfq.pdf_vision_data = json.dumps(pdf_vision_data, ensure_ascii=False)
+        rfq.lead_score = lead_score
+        rfq.lead_grade = lead_grade
+        if draft_reply:
+            rfq.draft_reply = draft_reply
+
+        await session.commit()
         logger.info(
             f"Updated RFQ #{rfq_id}: "
             f"Score={lead_score}, Grade={lead_grade}, "
-            f"ParsedFields={len(parsed_data)}, "
+            f"ParsedFields={len(parsed_data) if parsed_data else 0}, "
             f"HasPDFVision={pdf_vision_data is not None}, "
             f"HasDraftReply={draft_reply is not None}"
         )
         return True
+
+
+def update_rfq_with_results(
+    rfq_id: int,
+    parsed_data: Optional[Dict[str, Any]],
+    pdf_vision_data: Optional[Dict[str, Any]],
+    lead_score: int,
+    lead_grade: str,
+    draft_reply: Optional[str],
+) -> bool:
+    """Update RFQ database record with all analysis results."""
+    try:
+        return _run_async(_update_rfq_async(
+            rfq_id=rfq_id,
+            parsed_data=parsed_data,
+            pdf_vision_data=pdf_vision_data,
+            lead_score=lead_score,
+            lead_grade=lead_grade,
+            draft_reply=draft_reply,
+        ))
     except Exception as e:
         logger.error(f"Failed to update RFQ #{rfq_id}: {str(e)}")
         return False

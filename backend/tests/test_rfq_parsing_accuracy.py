@@ -12,11 +12,17 @@ Coverage:
 - Accuracy metrics for field extraction
 """
 
+import os
 import pytest
 import json
 from typing import Dict, Any, Optional
 
 from app.services.claude import get_claude_service
+
+pytestmark = pytest.mark.skipif(
+    os.getenv("RUN_LIVE_CLAUDE_TESTS", "false").lower() != "true",
+    reason="Set RUN_LIVE_CLAUDE_TESTS=true to run live Claude accuracy benchmark",
+)
 
 # Test data: 20 diverse RFQ examples
 TEST_RFQS = [
@@ -569,7 +575,7 @@ class TestRFQParsingAccuracy:
             print(f"\n--- Testing RFQ {i}: {rfq['name']} ---")
 
             # Test parsing
-            parse_result = claude_service.parse_rfq_text(rfq['text'])
+            parse_result = await claude_service.analyze_rfq_text(rfq['text'])
 
             # Validate critical fields
             accuracy_score = self._calculate_accuracy(

@@ -1,7 +1,7 @@
 """Tests for RFQ processing pipeline"""
 
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from app.tasks.rfq_pipeline import (
     process_rfq_complete_pipeline,
@@ -92,7 +92,14 @@ class TestRFQPipeline:
         """Test RFQ text parsing task"""
         rfq_text = "We need 500 aluminum parts"
 
-        result = parse_rfq_text_task(rfq_text)
+        with patch("app.tasks.rfq_pipeline.get_claude_service") as mock_get_claude:
+            mock_service = MagicMock()
+            mock_service.analyze_rfq_text = AsyncMock(return_value={
+                "success": True,
+                "parsed_data": {"quantity": 500, "unit": "pcs"},
+            })
+            mock_get_claude.return_value = mock_service
+            result = parse_rfq_text_task(rfq_text)
 
         assert result["success"] is True
         assert "parsed_data" in result
@@ -102,7 +109,15 @@ class TestRFQPipeline:
         attachment_url = "https://s3.example.com/rfq.pdf"
         rfq_text = "PDF RFQ content"
 
-        result = analyze_rfq_pdf_task(attachment_url, rfq_text)
+        with patch("app.tasks.rfq_pipeline.get_claude_service") as mock_get_claude:
+            mock_service = MagicMock()
+            mock_service.analyze_rfq_pdf = AsyncMock(return_value={
+                "success": True,
+                "vision_analysis": {"summary": "ok"},
+                "pages_analyzed": 1,
+            })
+            mock_get_claude.return_value = mock_service
+            result = analyze_rfq_pdf_task(attachment_url, rfq_text)
 
         assert result["success"] is True
         assert "vision_analysis" in result
@@ -111,7 +126,15 @@ class TestRFQPipeline:
         """Test buyer company enrichment task"""
         company_name = "Acme Manufacturing"
 
-        result = enrich_buyer_company_task(company_name)
+        with patch("app.tasks.rfq_pipeline.get_apollo_service") as mock_get_apollo:
+            mock_service = MagicMock()
+            mock_service.enrich_company_profile = AsyncMock(return_value={
+                "success": True,
+                "company": {"company_name": company_name},
+                "cached": False,
+            })
+            mock_get_apollo.return_value = mock_service
+            result = enrich_buyer_company_task(company_name)
 
         assert result["success"] is True
         assert result["company"]["company_name"] == company_name
@@ -143,7 +166,14 @@ class TestRFQPipeline:
         supplier_profile = {"company_name": "Our Company"}
         lead_grade = "A"
 
-        result = generate_draft_reply_task(parsed_data, supplier_profile, lead_grade)
+        with patch("app.tasks.rfq_pipeline.get_draft_reply_generator") as mock_get_generator:
+            mock_generator = MagicMock()
+            mock_generator.generate_reply = AsyncMock(return_value={
+                "success": True,
+                "draft_reply": "Thank you for your RFQ.",
+            })
+            mock_get_generator.return_value = mock_generator
+            result = generate_draft_reply_task(parsed_data, supplier_profile, lead_grade)
 
         assert result["success"] is True
         assert "draft_reply" in result
@@ -162,12 +192,23 @@ class TestRFQPipeline:
         rfq_id = 456
 
         with patch("app.tasks.rfq_pipeline.get_rfq_sync") as mock_get_rfq, \
+             patch("app.tasks.rfq_pipeline.parse_rfq_text_task") as mock_parse, \
+             patch("app.tasks.rfq_pipeline.analyze_rfq_pdf_task") as mock_pdf, \
+             patch("app.tasks.rfq_pipeline.enrich_buyer_company_task") as mock_company, \
+             patch("app.tasks.rfq_pipeline.calculate_lead_score_task") as mock_score, \
+             patch("app.tasks.rfq_pipeline.generate_draft_reply_task") as mock_reply, \
              patch("app.tasks.rfq_pipeline.update_rfq_with_results"):
 
             mock_rfq = MagicMock()
             mock_rfq.description = "Multi-stage test"
             mock_rfq.attachment_url = "https://example.com/rfq.pdf"
             mock_get_rfq.return_value = mock_rfq
+
+            mock_parse.return_value = {"success": True, "parsed_data": {"buyer_company": "Acme"}}
+            mock_pdf.return_value = {"success": True, "vision_analysis": {}, "pages_analyzed": 1}
+            mock_company.return_value = {"success": True, "company": {"company_name": "Acme"}, "cached": False}
+            mock_score.return_value = {"success": True, "lead_score": 80, "lead_grade": "A", "scores": {}}
+            mock_reply.return_value = {"success": True, "draft_reply": "Sample draft"}
 
             with patch.object(process_rfq_complete_pipeline, "retry"):
                 result = process_rfq_complete_pipeline(rfq_id)
@@ -230,17 +271,25 @@ class TestRFQPipeline:
         parsed_data = {"product_name": "Test"}
         supplier_profile = {"company_name": "Test Supplier"}
 
-        # Test with Grade A
-        result_a = generate_draft_reply_task(
-            parsed_data, supplier_profile, "A"
-        )
-        assert result_a["success"] is True
+        with patch("app.tasks.rfq_pipeline.get_draft_reply_generator") as mock_get_generator:
+            mock_generator = MagicMock()
+            mock_generator.generate_reply = AsyncMock(side_effect=[
+                {"success": True, "draft_reply": "Priority response for grade A."},
+                {"success": True, "draft_reply": "Standard response for grade C."},
+            ])
+            mock_get_generator.return_value = mock_generator
 
-        # Test with Grade C
-        result_c = generate_draft_reply_task(
-            parsed_data, supplier_profile, "C"
-        )
-        assert result_c["success"] is True
+            # Test with Grade A
+            result_a = generate_draft_reply_task(
+                parsed_data, supplier_profile, "A"
+            )
+            assert result_a["success"] is True
+
+            # Test with Grade C
+            result_c = generate_draft_reply_task(
+                parsed_data, supplier_profile, "C"
+            )
+            assert result_c["success"] is True
 
         # Both should have replies but could differ in tone
         assert len(result_a["draft_reply"]) > 0

@@ -1,6 +1,7 @@
 """Pydantic schemas for API request/response validation"""
 
 import re
+from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, EmailStr, field_validator
@@ -309,8 +310,8 @@ class RFQResponse(BaseModel):
     pdf_vision_data: Optional[str]
     ai_summary: Optional[str]
     draft_reply: Optional[str]
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True
@@ -326,8 +327,8 @@ class RFQListResponse(BaseModel):
     status: str
     lead_score: Optional[int]
     lead_grade: Optional[str]
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True

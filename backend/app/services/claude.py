@@ -74,6 +74,7 @@ class ClaudeService:
     def __init__(self):
         """Initialize Claude client"""
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.model = settings.ANTHROPIC_MODEL
         self.tracker = ClaudeAPITracker()
         self.textract_client = boto3.client(
             "textract",
@@ -162,7 +163,7 @@ class ClaudeService:
 
         try:
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.model,
                 max_tokens=2048,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -262,7 +263,7 @@ class ClaudeService:
 
         try:
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.model,
                 max_tokens=1024,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -301,7 +302,7 @@ class ClaudeService:
 
         try:
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.model,
                 max_tokens=512,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -441,7 +442,7 @@ class ClaudeService:
             })
 
             response = self.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.model,
                 max_tokens=2048,
                 messages=[
                     {

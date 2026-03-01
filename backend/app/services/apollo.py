@@ -6,7 +6,7 @@ from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
 
 import httpx
-import redis
+from redis import asyncio as aioredis
 
 from app.config import settings
 
@@ -32,17 +32,15 @@ class ApolloService:
             headers={"Content-Type": "application/json"},
         )
 
-        # Initialize Redis for caching
+        # Initialize async Redis client for caching (connection is lazy — no sync ping needed)
         try:
-            self.redis_client = redis.from_url(
+            self.redis_client = aioredis.from_url(
                 settings.REDIS_URL,
                 decode_responses=True,
             )
-            # Test connection
-            self.redis_client.ping()
-            logger.info("Connected to Redis for Apollo caching")
+            logger.info("Async Redis client initialized for Apollo caching")
         except Exception as e:
-            logger.warning(f"Failed to connect to Redis: {str(e)}. Caching disabled.")
+            logger.warning(f"Failed to initialize Redis client: {str(e)}. Caching disabled.")
             self.redis_client = None
 
     async def search_company(
@@ -258,7 +256,7 @@ class ApolloService:
             return None
 
         try:
-            cached_data = self.redis_client.get(cache_key)
+            cached_data = await self.redis_client.get(cache_key)
             if cached_data:
                 result = json.loads(cached_data)
                 result["cached"] = True
@@ -286,7 +284,7 @@ class ApolloService:
             return False
 
         try:
-            self.redis_client.setex(
+            await self.redis_client.setex(
                 cache_key,
                 self.CACHE_TTL_SECONDS,
                 json.dumps(value, ensure_ascii=False),
@@ -312,7 +310,7 @@ class ApolloService:
 
         try:
             cache_key = self._get_cache_key(company_name, domain)
-            deleted = self.redis_client.delete(cache_key)
+            deleted = await self.redis_client.delete(cache_key)
             if deleted:
                 logger.info(f"Cleared cache for {cache_key}")
             return bool(deleted)

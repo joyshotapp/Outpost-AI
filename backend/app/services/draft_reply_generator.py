@@ -42,7 +42,7 @@ class DraftReplyGenerator:
 
             # Generate reply
             response = self.claude_service.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.claude_service.model,
                 max_tokens=1024,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -118,7 +118,7 @@ class DraftReplyGenerator:
 請提供一份簡潔的後續回覆（150-250字）。"""
 
             response = self.claude_service.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.claude_service.model,
                 max_tokens=512,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -183,7 +183,7 @@ class DraftReplyGenerator:
 請根據優化要求改進上述草稿。"""
 
             response = self.claude_service.client.messages.create(
-                model="claude-3-5-sonnet-20241022",
+                model=self.claude_service.model,
                 max_tokens=1024,
                 system=system_prompt,
                 messages=[{"role": "user", "content": user_prompt}],
@@ -228,6 +228,9 @@ class DraftReplyGenerator:
 - 真誠表達商業合作的意願
 - 簡潔清晰，避免冗長"""
 
+        if not include_technical:
+            return base_prompt + "\n\n注意：本回覆應該專注於商業層面，不包含詳細的技術規格討論。"
+
         if lead_grade == "A":
             return base_prompt + """
 【針對高質量潛在客戶的特別指示】
@@ -257,11 +260,6 @@ class DraftReplyGenerator:
 - 承諾後續的詳細報價
 - 主動提出問題解答
 - 留下聯絡方式供後續跟進"""
-
-        if not include_technical:
-            return base_prompt + "\n\n注意：本回覆應該專注於商業層面，不包含詳細的技術規格討論。"
-
-        return base_prompt
 
     def _build_user_prompt(
         self,

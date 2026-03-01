@@ -96,3 +96,7 @@ celerybeat-schedule
 
 # Sentry
 sentry.properties
+
+.venv/
+.venv310/
+.venv*/
