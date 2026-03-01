@@ -16,6 +16,8 @@ from app.models.knowledge_document import KnowledgeDocument
 from app.models.conversation_message import ConversationMessage
 from app.models.notification import Notification
 from app.models.heygen_usage import HeyGenUsageRecord
+from app.models.outbound_contact import OutboundContact
+from app.models.linkedin_sequence import LinkedInSequence
 
 __all__ = [
     "Base",
@@ -29,6 +31,8 @@ __all__ = [
     "VideoLanguageVersion",
     "VisitorEvent",
     "OutboundCampaign",
+    "OutboundContact",
+    "LinkedInSequence",
     "ContentItem",
     "Conversation",
     "KnowledgeDocument",

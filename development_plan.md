@@ -61,7 +61,7 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 4 | Week 7-8 | AI 數位業務分身 | 🟢 代碼完成 | 10/10 ✅ | 4.10 已完成 mock benchmark（Live 待選跑） |
 | Sprint 5 | Week 9-10 | 訪客意圖分析 | 🟢 工程關版 | 10/10 ✅ | 外部實網驗收待補齊金鑰後簽核 |
 | Sprint 6 | Week 11-12 | AI 多語系影片 | 🟢 工程關版 | 8/8 ✅ | 完整後端 + 前端 + 費用追蹤 + E2E 測試；Code Review 高風險修復完成，待 HeyGen 實網金鑰上位後進行流量驗證 |
-| Sprint 7 | Week 13-14 | Outbound — LinkedIn | 🔲 未開始 | 0/10 | 需 Clay / HeyReach Key |
+| Sprint 7 | Week 13-14 | Outbound — LinkedIn | � 工程關版 | 10/10 ✅ | Clay/HeyReach stub 完成；實網金鑰上位後進行流量驗證 |
 | Sprint 8 | Week 15-16 | Outbound — Email | 🔲 未開始 | 0/10 | 需 Instantly API Key |
 | Sprint 9 | Week 17-18 | 內容裂變矩陣 | 🔲 未開始 | 0/10 | 需 OpusClip / Repurpose Key |
 | Sprint 10 | Week 19-20 | 搜尋系統 + 買家前台 | 🔲 未開始 | 0/10 | — |
@@ -301,29 +301,35 @@ python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --
 
 ---
 
-### Sprint 7（Week 13-14）：Outbound 引擎 — 名單建立與 LinkedIn 外展 — 🔲 未開始
+### Sprint 7（Week 13-14）：Outbound 引擎 — 名單建立與 LinkedIn 外展 — � 工程關版
 
 > 目標：Clay 名單富化 + HeyReach LinkedIn 自動化序列完整運作
 > 前置條件：Clay / HeyReach API Key 已上位、Sprint 5 訪客識別完成
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 7.1 | Clay API 封裝（建立 Table、匯入 ICP、觸發瀑布式富化、拉取結果） | INT-1 | 4 | 1.11 | 輸入 ICP 條件 → Clay 搜尋 + 富化 → 取回完整聯絡人資料 | 🔲 |
-| 7.2 | HeyReach API 封裝（建立活動、匯入名單、啟動序列、接收回覆 Webhook） | INT-1 | 4 | 1.11 | 名單匯入 → LinkedIn 序列自動執行 → 回覆觸發 Webhook | 🔲 |
-| 7.3 | Outbound 活動 API（建立/查詢/暫停/恢復） | BE-1 | 3 | 7.1, 7.2 | CRUD API 完整，含狀態管理 | 🔲 |
-| 7.4 | ICP 設定頁面 UI（產業/國家/職稱/公司規模篩選器） | FE-2 | 3 | 7.3 | 供應商可設定 ICP 條件，觸發名單建立 | 🔲 |
-| 7.5 | 目標名單管理頁面 UI（聯絡人列表 + 富化資料 + 審核介面） | FE-2 | 4 | 7.3 | 供應商可瀏覽名單、排除不適合的聯絡人 | 🔲 |
-| 7.6 | LinkedIn 外展序列管理 UI（序列狀態 + 回覆追蹤 + 熱線索標記） | FE-1 | 4 | 7.2 | 可查看每個聯絡人的序列進度（Day 1~25） | 🔲 |
-| 7.7 | AI 個人化開場白生成（Clay 富化資料 + Claude → 每人獨特開場白） | AI-1 | 3 | 7.1, 3.2 | 每個聯絡人有獨特的 LinkedIn 連結請求訊息 | 🔲 |
-| 7.8 | LinkedIn 安全防護（每日上限、隨機間隔、帳號輪換監控） | INT-1 | 2 | 7.2 | 每日連結請求 ≤ 25，訊息 ≤ 30，異常自動暫停 | 🔲 |
-| 7.9 | 回覆偵測 + 熱線索通知（HeyReach Webhook → 標記 + Slack） | INT-1 + BE-1 | 2 | 7.2, 3.9 | LinkedIn 回覆自動標記熱線索，推送至 Slack + 站內 | 🔲 |
-| 7.10 | Outbound 名單建立 E2E 測試 | QA-1 | 2 | 7.3 | 完整流程跑通（ICP 設定 → Clay 名單 → 匯入平台） | 🔲 |
+| 7.1 | Clay API 封裝（建立 Table、匯入 ICP、觸發瀑布式富化、拉取結果） | INT-1 | 4 | 1.11 | 輸入 ICP 條件 → Clay 搜尋 + 富化 → 取回完整聯絡人資料 | ✅ |
+| 7.2 | HeyReach API 封裝（建立活動、匯入名單、啟動序列、接收回覆 Webhook） | INT-1 | 4 | 1.11 | 名單匯入 → LinkedIn 序列自動執行 → 回覆觸發 Webhook | ✅ |
+| 7.3 | Outbound 活動 API（建立/查詢/暫停/恢復） | BE-1 | 3 | 7.1, 7.2 | CRUD API 完整，含狀態管理 | ✅ |
+| 7.4 | ICP 設定頁面 UI（產業/國家/職稱/公司規模篩選器） | FE-2 | 3 | 7.3 | 供應商可設定 ICP 條件，觸發名單建立 | ✅ |
+| 7.5 | 目標名單管理頁面 UI（聯絡人列表 + 富化資料 + 審核介面） | FE-2 | 4 | 7.3 | 供應商可瀏覽名單、排除不適合的聯絡人 | ✅ |
+| 7.6 | LinkedIn 外展序列管理 UI（序列狀態 + 回覆追蹤 + 熱線索標記） | FE-1 | 4 | 7.2 | 可查看每個聯絡人的序列進度（Day 1~25） | ✅ |
+| 7.7 | AI 個人化開場白生成（Clay 富化資料 + Claude → 每人獨特開場白） | AI-1 | 3 | 7.1, 3.2 | 每個聯絡人有獨特的 LinkedIn 連結請求訊息 | ✅ |
+| 7.8 | LinkedIn 安全防護（每日上限、隨機間隔、帳號輪換監控） | INT-1 | 2 | 7.2 | 每日連結請求 ≤ 25，訊息 ≤ 30，異常自動暫停 | ✅ |
+| 7.9 | 回覆偵測 + 熱線索通知（HeyReach Webhook → 標記 + Slack） | INT-1 + BE-1 | 2 | 7.2, 3.9 | LinkedIn 回覆自動標記熱線索，推送至 Slack + 站內 | ✅ |
+| 7.10 | Outbound 名單建立 E2E 測試 | QA-1 | 2 | 7.3 | 完整流程跑通（ICP 設定 → Clay 名單 → 匯入平台） | ✅ |
 
-**Sprint 7 交付物**：
-- Clay 瀑布式名單富化
-- LinkedIn 自動化外展序列（Day 1~25）
-- AI 個人化開場白
-- 安全防護機制
+**Sprint 7 交付物**（2026-03-01 工程關版）：
+- ✅ Clay 瀑布式名單富化（`services/clay.py` + `tasks/outbound.py`）
+- ✅ LinkedIn 自動化外展序列 Day 1~25（`services/heyreach.py` + `models/linkedin_sequence.py`）
+- ✅ AI 個人化開場白（`services/claude.py` `generate_linkedin_opener()`）
+- ✅ LinkedIn 安全防護（每日上限 25 連結 / 30 訊息，Celery beat 自動暫停）
+- ✅ HeyReach Webhook 熱線索通知（HMAC 驗簽 + Slack Block + 站內 Notification）
+- ✅ Outbound CRUD API（`api/v1/outbound.py` + `api/v1/webhooks.py`）
+- ✅ 4 個前端頁面（ICP 設定 / 聯絡人管理 / 序列追蹤 / 活動列表）
+- ✅ Migration 008 + E2E 測試（`tests/test_sprint7_e2e.py`）
+
+> 待實網金鑰上位後進行 Clay waterfall 流量驗證與 HeyReach 真實序列發送驗收
 
 ---
 

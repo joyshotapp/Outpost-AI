@@ -43,12 +43,26 @@ celery_app.conf.update(
         "app.tasks.rfq_pipeline.generate_draft_reply_task": {"queue": "rfq_generation"},
         "app.tasks.knowledge_base.ingest_knowledge_document": {"queue": "knowledge_ingestion"},
         "app.tasks.video.transcribe_video_with_whisper": {"queue": "video_transcription"},
+        # Sprint 7 — Outbound engine
+        "app.tasks.outbound.enrich_contacts_pipeline": {"queue": "outbound_enrichment"},
+        "app.tasks.outbound.generate_openers_batch": {"queue": "outbound_enrichment"},
+        "app.tasks.outbound.import_contacts_to_heyreach": {"queue": "outbound_sequences"},
+        "app.tasks.outbound.enforce_linkedin_safety": {"queue": "outbound_sequences"},
+        "app.tasks.outbound.reset_daily_linkedin_counters": {"queue": "outbound_maintenance"},
     },
     # Beat schedule for periodic tasks
     beat_schedule={
         "monitor-pipeline-health": {
             "task": "app.tasks.rfq_pipeline.monitor_pipeline_health",
             "schedule": 300.0,  # Every 5 minutes
+        },
+        "reset-daily-linkedin-counters": {
+            "task": "app.tasks.outbound.reset_daily_linkedin_counters",
+            "schedule": 86400.0,  # Every 24 hours (midnight UTC)
+        },
+        "enforce-linkedin-safety-all": {
+            "task": "app.tasks.outbound.enforce_linkedin_safety",
+            "schedule": 3600.0,  # Hourly safety check (requires campaign_id; use signals in production)
         },
     },
 )

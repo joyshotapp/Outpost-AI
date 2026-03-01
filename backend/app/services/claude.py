@@ -584,6 +584,69 @@ class ClaudeService:
                 "error": str(e),
             }
 
+    async def generate_linkedin_opener(
+        self,
+        full_name: str,
+        company_name: str,
+        job_title: str,
+        industry: str = "",
+        seniority: str = "",
+        max_chars: int = 300,
+    ) -> str:
+        """Generate a personalised LinkedIn connection request message (opener).
+
+        The opener must:
+        - Address the person by first name only
+        - Reference their role / company naturally
+        - Mention a relevant pain point for manufacturing buyers
+        - Feel human, NOT AI-generated
+        - Be ≤ 300 characters (LinkedIn connection note limit)
+
+        Returns the opener string, or a safe fallback if the API is unavailable.
+        """
+        if not settings.ANTHROPIC_API_KEY:
+            first = full_name.split()[0] if full_name else "there"
+            return (
+                f"Hi {first}, I came across {company_name} and would love to connect "
+                "to share how we help manufacturing teams source faster. Cheers!"
+        )[:max_chars]
+
+        prompt = (
+            f"Write a LinkedIn connection request note for:\n"
+            f"  Name: {full_name}\n"
+            f"  Title: {job_title} at {company_name}\n"
+            f"  Industry: {industry}\n"
+            f"  Seniority: {seniority}\n\n"
+            "Requirements:\n"
+            "- Use first name only\n"
+            "- Max 300 characters (absolutely critical)\n"
+            "- Sound natural and human, NOT like AI\n"
+            "- Reference a real manufacturing sourcing challenge\n"
+            "- DO NOT start with 'Hi, I noticed...' or generic intros\n"
+            "- Output ONLY the message text, no quotes, no explanation"
+        )
+
+        try:
+            response = self.client.messages.create(
+                model=settings.ANTHROPIC_MODEL,
+                max_tokens=120,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            self.tracker.add_usage(
+                input_tokens=response.usage.input_tokens,
+                output_tokens=response.usage.output_tokens,
+            )
+            opener = response.content[0].text.strip()
+            # Hard truncate to LinkedIn limit
+            return opener[:max_chars]
+        except Exception as exc:
+            logger.warning("generate_linkedin_opener failed: %s", exc)
+            first = full_name.split()[0] if full_name else "there"
+            return (
+                f"Hi {first}, impressed by {company_name}'s work in {industry}. "
+                "Would love to connect and explore synergies in manufacturing sourcing."
+            )[:max_chars]
+
     def get_usage_stats(self) -> Dict[str, Any]:
         """Get current API usage statistics"""
         return self.tracker.get_stats()
