@@ -1,0 +1,19 @@
+{
+  "generated_at": "2026-03-01T09:08:22.773097",
+  "tests": {
+    "command": "pytest tests/test_visitor_intent_api.py tests/test_sprint5_e2e_flow.py -q",
+    "exit_code": 0,
+    "stdout_tail": "rootdir: /Users/yuchuchen/Desktop/Outpost-AI/backend\nconfigfile: pytest.ini\nplugins: dash-2.11.1, anyio-4.12.0, Faker-20.1.0, cov-4.1.0, asyncio-0.21.1, langsmith-0.3.27\nasyncio: mode=auto\ncollected 10 items\n\ntests/test_visitor_intent_api.py .........                               [ 90%]\ntests/test_sprint5_e2e_flow.py .                                         [100%]\n\n======================= 10 passed, 15 warnings in 1.09s ========================",
+    "stderr_tail": "",
+    "passed": true
+  },
+  "env": {
+    "API_BASE_URL": false,
+    "RB2B_WEBHOOK_SECRET": false,
+    "LEADFEEDER_WEBHOOK_SECRET": false,
+    "CLAY_API_KEY": false,
+    "SUPPLIER_JWT": false
+  },
+  "env_ready_for_live_validation": false,
+  "preflight_pass": true
+}

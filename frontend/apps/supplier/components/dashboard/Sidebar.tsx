@@ -56,6 +56,32 @@ const navItems: NavItem[] = [
     ),
   },
   {
+    label: 'Knowledge Base',
+    href: '/dashboard/knowledge-base',
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M10 2a8 8 0 100 16 8 8 0 000-16zm-1 3a1 1 0 112 0v4a1 1 0 11-2 0V5zm1 10a1.25 1.25 0 110-2.5A1.25 1.25 0 0110 15z" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Visitor Intent',
+    href: '/dashboard/visitor-intent',
+    icon: (
+      <svg
+        className="w-5 h-5"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path d="M10 3a7 7 0 100 14 7 7 0 000-14zm0 2a1 1 0 011 1v3.382l2.447 1.224a1 1 0 11-.894 1.788l-3-1.5A1 1 0 019 10V6a1 1 0 011-1z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Inquiries',
     href: '/dashboard/inquiries',
     icon: (

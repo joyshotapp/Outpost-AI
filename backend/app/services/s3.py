@@ -220,6 +220,66 @@ class S3Service:
         except ClientError:
             return False
 
+    # ------------------------------------------------------------------
+    # CDN (CloudFront) URL helpers  — Sprint 6
+    # ------------------------------------------------------------------
+
+    def get_s3_key_from_url(self, s3_url: str) -> Optional[str]:
+        """Extract the raw S3 object key from an S3 or presigned URL.
+
+        Handles the common pattern:
+          https://<bucket>.s3.<region>.amazonaws.com/<key>
+          https://s3.<region>.amazonaws.com/<bucket>/<key>
+        Returns None if the URL cannot be parsed.
+        """
+        try:
+            from urllib.parse import urlparse, unquote
+            parsed = urlparse(s3_url)
+            hostname = parsed.hostname or ""
+
+            # Virtual-hosted style: <bucket>.s3.<region>.amazonaws.com
+            if hostname.startswith(self.bucket + ".s3."):
+                return unquote(parsed.path.lstrip("/"))
+
+            # Path style: s3.<region>.amazonaws.com/<bucket>/<key>
+            if hostname.startswith("s3.") and hostname.endswith(".amazonaws.com"):
+                path = parsed.path.lstrip("/")
+                if path.startswith(self.bucket + "/"):
+                    return unquote(path[len(self.bucket) + 1:])
+
+            # Already a CloudFront URL — nothing to do
+            return None
+        except Exception:
+            return None
+
+    def get_cdn_url(self, s3_url: str) -> str:
+        """Convert an S3 URL to a CloudFront URL.
+
+        If CLOUDFRONT_DOMAIN is not configured, returns the original S3 URL
+        unchanged (safe fallback for local/staging environments).
+
+        Args:
+            s3_url: An S3 object URL (virtual-hosted or path style).
+
+        Returns:
+            CloudFront URL if CLOUDFRONT_DOMAIN is set; otherwise the original URL.
+        """
+        cdn_domain = settings.CLOUDFRONT_DOMAIN
+        if not cdn_domain:
+            return s3_url
+
+        key = self.get_s3_key_from_url(s3_url)
+        if key is None:
+            # Possibly already a CDN URL or unparseable — return as-is
+            return s3_url
+
+        # Normalise domain (strip trailing slash, remove protocol if present)
+        cdn_domain = cdn_domain.rstrip("/")
+        if "://" not in cdn_domain:
+            cdn_domain = "https://" + cdn_domain
+
+        return f"{cdn_domain}/{key}"
+
     async def upload_rfq_attachment(
         self, file_content: bytes, filename: str
     ) -> str:

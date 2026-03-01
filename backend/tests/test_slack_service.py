@@ -340,3 +340,41 @@ class TestSlackService:
             mock_post.assert_called_once()
             call_args = mock_post.call_args
             assert call_args is not None
+
+    @pytest.mark.asyncio
+    async def test_send_high_intent_visitor_notification(self, slack_service):
+        """Test sending high-intent visitor notification"""
+        with patch("aiohttp.ClientSession.post") as mock_post:
+            mock_response = AsyncMock()
+            mock_response.status = 200
+            mock_response.json = AsyncMock(return_value={"ts": "1234567890.123456"})
+            mock_post.return_value.__aenter__.return_value = mock_response
+
+            result = await slack_service.send_high_intent_visitor_notification(
+                supplier_id=7,
+                visitor_session_id="visitor-abc",
+                event_type="rfq_submit_click",
+                intent_score=88,
+                page_url="/suppliers/acme/rfq",
+                visitor_company="Acme Inc",
+            )
+
+            assert result["success"] is True
+            assert result["message_ts"] == "1234567890.123456"
+
+    @pytest.mark.asyncio
+    async def test_send_high_intent_visitor_notification_skips_without_webhook(self):
+        """Test high-intent notification returns skipped when webhook missing"""
+        with patch("app.services.slack.settings") as mock_settings:
+            mock_settings.SLACK_WEBHOOK_URL = None
+            service = SlackService()
+
+            result = await service.send_high_intent_visitor_notification(
+                supplier_id=7,
+                visitor_session_id="visitor-abc",
+                event_type="rfq_submit_click",
+                intent_score=88,
+            )
+
+            assert result["success"] is True
+            assert result["skipped"] is True

@@ -197,10 +197,9 @@ git push origin feature/rfq-parsing
    - 需要 20+ 真實 RFQ 樣本進行 Prompt Engineering
    - 準確率必須 ≥ 80%
 
-3. **AI 分身 RAG**（Sprint 4）
-   - 決定整個平台的用戶體驗
-   - 多語言幻覺率控制在 < 15%
-   - 轉人工機制必須可靠
+3. **AI 分身 RAG**（Sprint 4，已完成代碼與 mock benchmark）
+   - 已完成多語言問答與轉人工機制
+   - 可視需求追加 Live Benchmark 實網驗證
 
 4. **冷啟動策略**（Month 1）
    - 無供應商無法驗證買家端功能
@@ -219,11 +218,11 @@ git push origin feature/rfq-parsing
 | 文件 | 用途 | 位置 |
 |------|------|------|
 | 技術架構 | 系統設計深度理解 | `docs/technical_architecture.md` |
-| 開發計畫 | Sprint 執行 + Task 分配 | `docs/development_plan.md` |
+| 開發計畫 | Sprint 執行 + Task 分配 | `development_plan.md` |
 | API 文件 | 端點與參數定義 | `docs/api/endpoints.md` |
 | 部署指南 | Staging / Production 部署 | `docs/guides/deployment.md` |
 | 第三方設定 | API 申請與配置 | `docs/tutorials/third-party-setup.md` |
-| 專案指令 | Claude Code 規範 | `CLAUDE.md` |
+| 專案指令 | Claude Code 規範 | `.claude/` |
 | 目錄說明 | 每個目錄的用途 | `PROJECT_STRUCTURE.md` |
 
 ---

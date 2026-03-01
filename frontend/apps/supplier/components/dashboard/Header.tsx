@@ -1,7 +1,10 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
+import { io, Socket } from 'socket.io-client'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
 
 interface HeaderProps {
   sidebarOpen: boolean
@@ -10,6 +13,88 @@ interface HeaderProps {
 
 export default function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [notificationCount, setNotificationCount] = useState(0)
+  const socketRef = useRef<Socket | null>(null)
+
+  const token = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return null
+    }
+    return localStorage.getItem('access_token')
+  }, [])
+
+  useEffect(() => {
+    if (!token) {
+      return
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/v1/notifications?unread_only=true&limit=100`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!response.ok) {
+          return
+        }
+        const notifications = await response.json()
+        if (Array.isArray(notifications)) {
+          setNotificationCount(notifications.length)
+        }
+      } catch {
+        // Ignore notification fetch failures in header.
+      }
+    }
+
+    const setupSocket = async () => {
+      try {
+        const summaryResponse = await fetch(`${API_BASE_URL}/api/v1/visitor-intent/summary`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!summaryResponse.ok) {
+          return
+        }
+        const summary = await summaryResponse.json()
+        const supplierId = summary?.supplier_id
+        if (!supplierId) {
+          return
+        }
+
+        const socket = io(API_BASE_URL, {
+          path: '/ws/socket.io',
+          transports: ['websocket'],
+          auth: {
+            token: `Bearer ${token}`,
+          },
+        })
+
+        socket.on('connect', () => {
+          socket.emit('notification:subscribe', { supplier_id: supplierId })
+        })
+
+        socket.on('notification:new', () => {
+          setNotificationCount((prev) => prev + 1)
+        })
+
+        socketRef.current = socket
+      } catch {
+        // Ignore socket setup failures in header.
+      }
+    }
+
+    fetchUnreadCount()
+    setupSocket()
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect()
+        socketRef.current = null
+      }
+    }
+  }, [token])
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 flex-shrink-0">
@@ -70,7 +155,14 @@ export default function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
           >
             <path d="M10.5 1.5H9.5A1.5 1.5 0 008 3v1a1 1 0 01-1 1H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-1a1 1 0 01-1-1V3a1.5 1.5 0 00-1.5-1.5zM4 8a.5.5 0 100 1h12a.5.5 0 100-1H4zm0 3a.5.5 0 100 1h12a.5.5 0 100-1H4zm0 3a.5.5 0 100 1h12a.5.5 0 100-1H4z" />
           </svg>
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          {notificationCount > 0 && (
+            <>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+              <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-[10px] leading-4 text-center">
+                {notificationCount > 99 ? '99+' : notificationCount}
+              </span>
+            </>
+          )}
         </button>
 
         {/* User Menu */}

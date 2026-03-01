@@ -2,12 +2,21 @@
 
 import React, { useState } from 'react'
 import Image from 'next/image'
+import LocalizationStatusPanel, { StatusBadge, LocalizationStatus, LanguageVersionStatus } from './LocalizationStatusPanel'
 
 interface Language {
   code: string
   title: string
   subtitle?: string
   dubbed?: boolean
+  // Sprint 6 localization status fields
+  localization_status?: LocalizationStatus
+  provider_job_id?: string | null
+  cdn_url?: string | null
+  compression_ratio?: number | null
+  error_message?: string | null
+  subtitle_url?: string | null
+  voice_url?: string | null
 }
 
 interface Video {
@@ -147,9 +156,16 @@ export default function VideoList({ videos }: VideoListProps) {
                   {video.languages?.slice(0, 3).map((lang) => (
                     <span
                       key={lang.code}
-                      className="inline-block px-2 py-1 bg-primary-50 text-primary-700 text-body-xs rounded"
+                      className="inline-flex items-center gap-1 px-2 py-1 bg-primary-50 text-primary-700 text-body-xs rounded"
                     >
                       {lang.code.toUpperCase()}
+                      {lang.localization_status && lang.localization_status !== 'pending' && (
+                        <span className={`w-2 h-2 rounded-full ${
+                          lang.localization_status === 'completed' ? 'bg-green-500' :
+                          lang.localization_status === 'processing' ? 'bg-blue-500 animate-pulse' :
+                          lang.localization_status === 'failed' ? 'bg-red-500' : 'bg-gray-400'
+                        }`} />
+                      )}
                     </span>
                   ))}
                   {(video.languages?.length ?? 0) > 3 && (
@@ -241,31 +257,18 @@ export default function VideoList({ videos }: VideoListProps) {
                 <h3 className="text-body-lg font-semibold text-gray-900 mb-4">
                   Language Versions
                 </h3>
-                <div className="space-y-3">
-                  {selectedVideo.languages.map((lang) => (
-                    <div
-                      key={lang.code}
-                      className="border border-gray-200 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-gray-900">
-                          {lang.code.toUpperCase()}
-                        </h4>
-                        {lang.dubbed && (
-                          <span className="text-body-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
-                            Dubbed
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-body-sm text-gray-700">{lang.title}</p>
-                      {lang.subtitle && (
-                        <p className="text-body-xs text-gray-500 mt-1">
-                          Subtitles: {lang.subtitle}
-                        </p>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <LocalizationStatusPanel
+                  versions={selectedVideo.languages.map((lang): LanguageVersionStatus => ({
+                    language_code: lang.code,
+                    localization_status: lang.localization_status ?? 'pending',
+                    provider_job_id: lang.provider_job_id,
+                    cdn_url: lang.cdn_url,
+                    compression_ratio: lang.compression_ratio,
+                    error_message: lang.error_message,
+                    subtitle_url: lang.subtitle_url,
+                    voice_url: lang.voice_url,
+                  }))}
+                />
               </div>
 
               {/* Action Buttons */}

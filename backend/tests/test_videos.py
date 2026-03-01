@@ -4,14 +4,15 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.database import Base
 from app.main import app
 from app.dependencies import get_db
+from app.models.base import Base
 from app.models import User, Supplier, UserRole
 from app.security import hash_password
 
-TEST_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
+TEST_DATABASE_URL = "sqlite+aiosqlite:///./test_videos.db"
 
 
 @pytest.fixture
@@ -21,6 +22,8 @@ async def test_db():
         TEST_DATABASE_URL,
         echo=False,
         future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
 
     async with engine.begin() as conn:
@@ -498,3 +501,175 @@ class TestVideoDelete:
         assert get_response.status_code == 404 or not get_response.json().get(
             "is_published", True
         )
+
+
+class TestVideoLocalization:
+    """Tests for multilingual localization task enqueue"""
+
+    def test_localize_video_enqueue_success(self, client, test_supplier, monkeypatch):
+        """Test enqueueing multilingual localization task"""
+
+        class FakeTaskResult:
+            id = "task-123"
+
+        class FakeTask:
+            @staticmethod
+            def delay(**kwargs):
+                assert kwargs["video_id"] > 0
+                assert kwargs["source_language"] == "en"
+                assert kwargs["target_languages"] == ["de", "ja"]
+                return FakeTaskResult()
+
+        monkeypatch.setattr("app.api.v1.videos.generate_multilingual_video_versions", FakeTask)
+
+        create_response = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "Video to Localize",
+                "video_url": "https://s3.example.com/localize.mp4",
+            },
+        )
+        video_id = create_response.json()["id"]
+
+        response = client.post(
+            f"/api/v1/videos/{video_id}/localize",
+            json={
+                "source_language": "en",
+                "target_languages": ["ja", "de", "ja"],
+            },
+        )
+
+        assert response.status_code == 202
+        data = response.json()
+        assert data["task_id"] == "task-123"
+        assert data["status"] == "queued"
+        assert data["video_id"] == video_id
+        assert data["source_language"] == "en"
+        assert data["target_languages"] == ["de", "ja"]
+
+    def test_localize_video_empty_target_languages(self, client, test_supplier):
+        """Test validation for empty target_languages"""
+        create_response = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "Video to Validate",
+                "video_url": "https://s3.example.com/validate.mp4",
+            },
+        )
+        video_id = create_response.json()["id"]
+
+        response = client.post(
+            f"/api/v1/videos/{video_id}/localize",
+            json={
+                "source_language": "en",
+                "target_languages": [],
+            },
+        )
+
+        assert response.status_code == 422
+
+
+class TestLocalizationStatus:
+    """Tests for GET /videos/{id}/localization-status endpoints"""
+
+    def test_get_localization_status_empty(self, client, test_supplier):
+        """Newly created video has no language versions → returns empty list"""
+        create_resp = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "Status Test Video",
+                "video_url": "https://s3.example.com/status.mp4",
+            },
+        )
+        assert create_resp.status_code in (200, 201)
+        video_id = create_resp.json()["id"]
+
+        resp = client.get(f"/api/v1/videos/{video_id}/localization-status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["video_id"] == video_id
+        assert data["versions"] == []
+        assert data["total"] == 0
+        assert data["completed"] == 0
+        assert data["failed"] == 0
+        assert data["pending"] == 0
+
+    def test_get_localization_status_with_versions(self, client, test_supplier):
+        """Language versions created via the language-versions API are visible in status"""
+        create_resp = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "Status With Versions",
+                "video_url": "https://s3.example.com/status2.mp4",
+            },
+        )
+        video_id = create_resp.json()["id"]
+
+        # Add a language version manually
+        client.post(
+            f"/api/v1/videos/{video_id}/language-versions",
+            json={
+                "language_code": "de",
+                "title": "Status Test DE",
+                "description": "Deutsche Version",
+            },
+        )
+
+        resp = client.get(f"/api/v1/videos/{video_id}/localization-status")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total"] == 1
+        version = data["versions"][0]
+        assert version["language_code"] == "de"
+        assert version["localization_status"] == "pending"
+
+    def test_get_single_language_status(self, client, test_supplier):
+        """Single language version status endpoint returns correct entry"""
+        create_resp = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "Single Lang Status",
+                "video_url": "https://s3.example.com/single.mp4",
+            },
+        )
+        video_id = create_resp.json()["id"]
+
+        client.post(
+            f"/api/v1/videos/{video_id}/language-versions",
+            json={
+                "language_code": "ja",
+                "title": "Japanese Version",
+            },
+        )
+
+        resp = client.get(f"/api/v1/videos/{video_id}/localization-status/ja")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["language_code"] == "ja"
+        assert data["localization_status"] == "pending"
+        assert data["video_id"] == video_id
+
+    def test_get_single_language_status_not_found(self, client, test_supplier):
+        """404 returned for non-existent language version"""
+        create_resp = client.post(
+            "/api/v1/videos",
+            json={
+                "supplier_id": test_supplier.id,
+                "title": "No Lang Video",
+                "video_url": "https://s3.example.com/nolang.mp4",
+            },
+        )
+        video_id = create_resp.json()["id"]
+
+        resp = client.get(f"/api/v1/videos/{video_id}/localization-status/fr")
+        assert resp.status_code == 404
+
+    def test_localization_status_video_not_found(self, client):
+        """404 returned when video_id doesn't exist"""
+        resp = client.get("/api/v1/videos/99999/localization-status")
+        assert resp.status_code == 404

@@ -41,6 +41,8 @@ celery_app.conf.update(
         "app.tasks.rfq_pipeline.enrich_buyer_company_task": {"queue": "rfq_analysis"},
         "app.tasks.rfq_pipeline.calculate_lead_score_task": {"queue": "rfq_scoring"},
         "app.tasks.rfq_pipeline.generate_draft_reply_task": {"queue": "rfq_generation"},
+        "app.tasks.knowledge_base.ingest_knowledge_document": {"queue": "knowledge_ingestion"},
+        "app.tasks.video.transcribe_video_with_whisper": {"queue": "video_transcription"},
     },
     # Beat schedule for periodic tasks
     beat_schedule={

@@ -12,6 +12,10 @@ from app.models.visitor_event import VisitorEvent
 from app.models.outbound_campaign import OutboundCampaign
 from app.models.content_item import ContentItem
 from app.models.conversation import Conversation
+from app.models.knowledge_document import KnowledgeDocument
+from app.models.conversation_message import ConversationMessage
+from app.models.notification import Notification
+from app.models.heygen_usage import HeyGenUsageRecord
 
 __all__ = [
     "Base",
@@ -27,4 +31,8 @@ __all__ = [
     "OutboundCampaign",
     "ContentItem",
     "Conversation",
+    "KnowledgeDocument",
+    "ConversationMessage",
+    "Notification",
+    "HeyGenUsageRecord",
 ]

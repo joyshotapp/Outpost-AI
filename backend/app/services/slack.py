@@ -141,6 +141,119 @@ class SlackService:
                 "error": str(e),
             }
 
+    async def send_handoff_notification(
+        self,
+        supplier_id: int,
+        conversation_id: int,
+        visitor_session_id: Optional[str],
+        question_preview: str,
+        confidence_score: int,
+    ) -> Dict[str, Any]:
+        """Send escalation notification when AI confidence is below threshold"""
+        if not self.webhook_url:
+            return {
+                "success": False,
+                "error": "Slack webhook URL not configured",
+            }
+
+        message = {
+            "text": "🔔 AI Chat Escalation Required",
+            "attachments": [
+                {
+                    "color": "#f39c12",
+                    "title": f"Conversation #{conversation_id} requires human follow-up",
+                    "fields": [
+                        {
+                            "title": "Supplier ID",
+                            "value": str(supplier_id),
+                            "short": True,
+                        },
+                        {
+                            "title": "Confidence Score",
+                            "value": f"{confidence_score}/100",
+                            "short": True,
+                        },
+                        {
+                            "title": "Visitor Session",
+                            "value": visitor_session_id or "N/A",
+                            "short": True,
+                        },
+                        {
+                            "title": "Question Preview",
+                            "value": question_preview[:250],
+                            "short": False,
+                        },
+                    ],
+                    "ts": int(__import__("time").time()),
+                }
+            ],
+        }
+
+        return await self._send_webhook(message)
+
+    async def send_high_intent_visitor_notification(
+        self,
+        supplier_id: int,
+        visitor_session_id: str,
+        event_type: str,
+        intent_score: int,
+        page_url: Optional[str] = None,
+        visitor_company: Optional[str] = None,
+    ) -> Dict[str, Any]:
+        """Send high-intent visitor alert to Slack."""
+        if not self.webhook_url:
+            return {
+                "success": True,
+                "skipped": True,
+                "reason": "Slack webhook URL not configured",
+            }
+
+        message = {
+            "text": "🔥 High-Intent Visitor Detected",
+            "attachments": [
+                {
+                    "color": "#e74c3c",
+                    "title": "Visitor intent alert",
+                    "fields": [
+                        {
+                            "title": "Supplier ID",
+                            "value": str(supplier_id),
+                            "short": True,
+                        },
+                        {
+                            "title": "Intent Score",
+                            "value": f"{intent_score}/100",
+                            "short": True,
+                        },
+                        {
+                            "title": "Event",
+                            "value": event_type,
+                            "short": True,
+                        },
+                        {
+                            "title": "Visitor Session",
+                            "value": visitor_session_id,
+                            "short": True,
+                        },
+                        {
+                            "title": "Company",
+                            "value": visitor_company or "Unknown",
+                            "short": True,
+                        },
+                        {
+                            "title": "Page URL",
+                            "value": page_url or "N/A",
+                            "short": False,
+                        },
+                    ],
+                    "footer": "Outpost AI - Visitor Intent",
+                    "ts": int(__import__("time").time()),
+                }
+            ],
+        }
+
+        return await self._send_webhook(message)
+
     def _build_lead_message(
         self,
         rfq_id: int,

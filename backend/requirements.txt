@@ -33,6 +33,7 @@ botocore==1.34.14
 
 # AI/LLM
 anthropic==0.84.0
+python-socketio[asgi]==5.11.4
 
 # PDF Processing
 pdf2image==1.16.3

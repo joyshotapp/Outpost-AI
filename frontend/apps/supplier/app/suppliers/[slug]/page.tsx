@@ -1,7 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Image from 'next/image'
+import AIAvatarWidget from '@/components/ai/AIAvatarWidget'
+import CookieConsentBanner from '@/components/common/CookieConsentBanner'
+import VideoPlayerWithLanguageSwitcher, { VideoLanguageOption } from '@/components/videos/VideoPlayerWithLanguageSwitcher'
+import { useVisitorTracking } from '@/hooks/useVisitorTracking'
 
 interface SupplierProfilePageProps {
   params: {
@@ -37,23 +41,51 @@ const mockSupplier = {
       id: '1',
       title: 'Company Overview',
       thumbnail: 'https://via.placeholder.com/400x300',
+      video_url: '',
+      language_versions: [
+        { code: 'en', label: 'English', localization_status: 'completed' },
+        { code: 'zh', label: '中文', localization_status: 'completed' },
+        { code: 'de', label: 'Deutsch', localization_status: 'completed' },
+      ] as VideoLanguageOption[],
     },
     {
       id: '2',
       title: 'CNC Machining Process',
       thumbnail: 'https://via.placeholder.com/400x300',
+      video_url: '',
+      language_versions: [
+        { code: 'en', label: 'English', localization_status: 'completed' },
+        { code: 'ja', label: '日本語', localization_status: 'processing' },
+      ] as VideoLanguageOption[],
     },
     {
       id: '3',
       title: 'Quality Control',
       thumbnail: 'https://via.placeholder.com/400x300',
+      video_url: '',
+      language_versions: [] as VideoLanguageOption[],
     },
   ],
 }
 
 export default function SupplierProfilePage({ params }: SupplierProfilePageProps) {
   const [activeTab, setActiveTab] = useState('overview')
+  const [trackingEnabled, setTrackingEnabled] = useState(false)
+  const [expandedVideoId, setExpandedVideoId] = useState<string | null>(null)
   const supplier = mockSupplier
+
+  const { trackEvent } = useVisitorTracking({
+    supplierId: Number(supplier.id),
+    enabled: trackingEnabled,
+  })
+
+  useEffect(() => {
+    trackEvent({
+      eventType: 'supplier_profile_view',
+      pageUrl: `/suppliers/${params.slug}`,
+      eventData: { slug: params.slug },
+    })
+  }, [params.slug, trackEvent])
 
   return (
     <div className="bg-white">
@@ -117,7 +149,15 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
             </div>
 
             {/* Contact Button */}
-            <button className="px-6 py-3 bg-primary-600 text-white text-body-sm font-medium rounded-lg hover:bg-primary-700 transition-colors">
+            <button
+              onClick={() => {
+                trackEvent({
+                  eventType: 'contact_click',
+                  eventData: { source: 'profile_header' },
+                })
+              }}
+              className="px-6 py-3 bg-primary-600 text-white text-body-sm font-medium rounded-lg hover:bg-primary-700 transition-colors"
+            >
               Send Inquiry
             </button>
           </div>
@@ -137,7 +177,13 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  setActiveTab(tab.id)
+                  trackEvent({
+                    eventType: 'tab_click',
+                    eventData: { tab: tab.id },
+                  })
+                }}
                 className={`pb-4 text-body-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
                     ? 'text-primary-600 border-primary-600'
@@ -308,30 +354,82 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
               {supplier.videos.map((video) => (
                 <div
                   key={video.id}
-                  className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow cursor-pointer"
+                  className="group bg-white rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow"
                 >
-                  <div className="relative w-full h-48 bg-gray-900 flex items-center justify-center overflow-hidden">
-                    <Image
-                      src={video.thumbnail}
-                      alt={video.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform"
-                    />
-                    <button className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all">
-                      <svg
-                        className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                        fill="currentColor"
-                        viewBox="0 0 20 20"
-                      >
-                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="text-body-sm font-semibold text-gray-900">
-                      {video.title}
-                    </h3>
-                  </div>
+                  {expandedVideoId === video.id ? (
+                    /* Expanded player with language switcher */
+                    <div className="p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-body-sm font-semibold text-gray-900 truncate">
+                          {video.title}
+                        </h3>
+                        <button
+                          onClick={() => setExpandedVideoId(null)}
+                          className="text-gray-400 hover:text-gray-600 ml-2 shrink-0"
+                          aria-label="Close player"
+                        >
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                      <VideoPlayerWithLanguageSwitcher
+                        videoTitle={video.title}
+                        sourceVideoUrl={video.video_url || video.thumbnail}
+                        languageVersions={video.language_versions}
+                      />
+                    </div>
+                  ) : (
+                    /* Thumbnail card */
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => setExpandedVideoId(video.id)}
+                    >
+                      <div className="relative w-full h-48 bg-gray-900 flex items-center justify-center overflow-hidden">
+                        <Image
+                          src={video.thumbnail}
+                          alt={video.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                        <button className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all">
+                          <svg
+                            className="w-12 h-12 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <h3 className="text-body-sm font-semibold text-gray-900">
+                          {video.title}
+                        </h3>
+                        {/* Language version badges */}
+                        {video.language_versions.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {video.language_versions
+                              .filter((v) => v.localization_status === 'completed' || !v.localization_status)
+                              .slice(0, 4)
+                              .map((v) => (
+                                <span
+                                  key={v.code}
+                                  className="inline-block px-2 py-0.5 bg-primary-50 text-primary-700 text-xs rounded-full"
+                                >
+                                  {v.label || v.code.toUpperCase()}
+                                </span>
+                              ))}
+                            {video.language_versions.some((v) => v.localization_status === 'processing') && (
+                              <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-xs rounded-full">
+                                + more coming
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -393,6 +491,9 @@ export default function SupplierProfilePage({ params }: SupplierProfilePageProps
           </div>
         )}
       </div>
+
+      <AIAvatarWidget supplierId={Number(supplier.id)} />
+      <CookieConsentBanner onConsentChange={setTrackingEnabled} />
     </div>
   )
 }

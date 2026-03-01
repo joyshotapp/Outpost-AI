@@ -208,11 +208,75 @@ class VideoLanguageVersionResponse(BaseModel):
     description: Optional[str]
     subtitle_url: Optional[str]
     voice_url: Optional[str]
+    # Sprint 6 localization status fields
+    localization_status: str = "pending"
+    provider_job_id: Optional[str] = None
+    cdn_url: Optional[str] = None
+    compression_ratio: Optional[float] = None
+    error_message: Optional[str] = None
     created_at: str
     updated_at: str
 
     class Config:
         from_attributes = True
+
+
+class LocalizationJobStatusResponse(BaseModel):
+    """Status of a video language version localization job"""
+
+    video_id: int
+    language_code: str
+    localization_status: str
+    provider_job_id: Optional[str] = None
+    cdn_url: Optional[str] = None
+    compression_ratio: Optional[float] = None
+    error_message: Optional[str] = None
+    subtitle_url: Optional[str] = None
+    voice_url: Optional[str] = None
+
+
+class VideoLocalizationRequest(BaseModel):
+    """Request for enqueueing multilingual video generation"""
+
+    target_languages: list[str]
+    source_language: str = "en"
+
+    @field_validator("source_language")
+    @classmethod
+    def normalize_source_language(cls, value: str) -> str:
+        normalized = (value or "").strip().lower()
+        if not normalized:
+            raise ValueError("source_language is required")
+        return normalized
+
+    @field_validator("target_languages")
+    @classmethod
+    def normalize_target_languages(cls, value: list[str]) -> list[str]:
+        normalized = sorted({language.strip().lower() for language in value if language and language.strip()})
+        if not normalized:
+            raise ValueError("target_languages must include at least one language")
+        return normalized
+
+
+class VideoLocalizationTaskResponse(BaseModel):
+    """Response for multilingual generation task enqueue"""
+
+    task_id: str
+    status: str
+    video_id: int
+    source_language: str
+    target_languages: list[str]
+
+
+class VideoLocalizationStatusSummary(BaseModel):
+    """Summary of all language version statuses for a video"""
+
+    video_id: int
+    versions: list[LocalizationJobStatusResponse]
+    total: int
+    completed: int
+    failed: int
+    pending: int
 
 
 class VideoCreateRequest(BaseModel):
@@ -332,3 +396,265 @@ class RFQListResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class KnowledgeNamespaceInitResponse(BaseModel):
+    """Response for supplier Pinecone namespace initialization"""
+
+    supplier_id: int
+    namespace: str
+    index_name: str
+    initialized: bool
+
+
+class KnowledgeDocumentCreateRequest(BaseModel):
+    """Create knowledge document request"""
+
+    supplier_id: int
+    title: str
+    source_type: str
+    language: str = "en"
+    text_content: Optional[str] = None
+    source_s3_key: Optional[str] = None
+
+    @field_validator("source_type")
+    @classmethod
+    def validate_source_type(cls, v: str) -> str:
+        allowed = {"transcript", "catalog", "manual", "faq", "other"}
+        normalized = v.strip().lower()
+        if normalized not in allowed:
+            raise ValueError(f"source_type must be one of: {', '.join(sorted(allowed))}")
+        return normalized
+
+    @field_validator("text_content")
+    @classmethod
+    def validate_content_not_empty(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("text_content cannot be empty when provided")
+        return v
+
+    @field_validator("source_s3_key")
+    @classmethod
+    def validate_s3_key_not_empty(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and not v.strip():
+            raise ValueError("source_s3_key cannot be empty when provided")
+        return v
+
+
+class KnowledgeDocumentResponse(BaseModel):
+    """Knowledge document response"""
+
+    id: int
+    supplier_id: int
+    title: str
+    source_type: str
+    source_s3_key: Optional[str]
+    language: str
+    status: str
+    chunk_count: int
+    pinecone_namespace: str
+    pinecone_document_id: str
+    error_message: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class KnowledgeQueryRequest(BaseModel):
+    """Knowledge retrieval query request"""
+
+    supplier_id: int
+    query: str
+    top_k: int = 5
+
+    @field_validator("top_k")
+    @classmethod
+    def validate_top_k(cls, v: int) -> int:
+        if v < 1 or v > 20:
+            raise ValueError("top_k must be between 1 and 20")
+        return v
+
+
+class KnowledgeMatch(BaseModel):
+    """Single retrieved chunk match"""
+
+    id: str
+    score: float
+    chunk_text: str
+    source_title: Optional[str]
+    source_type: Optional[str]
+    chunk_index: Optional[int]
+
+
+class KnowledgeQueryResponse(BaseModel):
+    """Knowledge retrieval query response"""
+
+    supplier_id: int
+    namespace: str
+    matches: list[KnowledgeMatch]
+
+
+class RAGChatRequest(BaseModel):
+    """RAG chat request"""
+
+    supplier_id: int
+    question: str
+    language: str = "en"
+    top_k: int = 5
+
+    @field_validator("top_k")
+    @classmethod
+    def validate_chat_top_k(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("top_k must be between 1 and 10")
+        return v
+
+
+class RAGChatResponse(BaseModel):
+    """RAG chat response"""
+
+    supplier_id: int
+    question: str
+    answer: str
+    language: str
+    confidence_score: int
+    should_escalate: bool
+    matched_chunks: list[KnowledgeMatch]
+
+
+class NotificationResponse(BaseModel):
+    """In-app notification response"""
+
+    id: int
+    supplier_id: int
+    conversation_id: Optional[int]
+    notification_type: str
+    title: str
+    message: str
+    is_read: int
+    metadata_json: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class KnowledgeSupplierContextResponse(BaseModel):
+    """Current supplier knowledge namespace context"""
+
+    supplier_id: int
+    namespace: str
+
+
+class VisitorIntentEventCreateRequest(BaseModel):
+    """Public visitor behavior event ingest payload"""
+
+    supplier_id: int
+    visitor_session_id: str
+    event_type: str
+    page_url: Optional[str] = None
+    event_data: Optional[dict] = None
+    session_duration_seconds: Optional[int] = None
+    visitor_email: Optional[str] = None
+    visitor_company: Optional[str] = None
+    visitor_country: Optional[str] = None
+    consent_given: bool = True
+
+
+class VisitorIntentEventCreateResponse(BaseModel):
+    """Response for visitor behavior event ingest"""
+
+    accepted: bool
+    queued_for_scoring: bool
+    event_id: Optional[int] = None
+    reason: Optional[str] = None
+
+
+class VisitorIntentEventListResponse(BaseModel):
+    """Visitor intent event item for supplier dashboard"""
+
+    id: int
+    supplier_id: int
+    visitor_session_id: str
+    visitor_email: Optional[str]
+    visitor_company: Optional[str]
+    visitor_country: Optional[str]
+    event_type: str
+    page_url: Optional[str]
+    session_duration_seconds: Optional[int]
+    intent_score: Optional[int]
+    intent_level: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class VisitorIntentSummaryResponse(BaseModel):
+    """Aggregate visitor intent metrics for supplier dashboard"""
+
+    supplier_id: int
+    total_events: int
+    high_intent_count: int
+    medium_intent_count: int
+    avg_intent_score: float
+    latest_event_at: Optional[datetime]
+    generated_at: datetime
+
+
+class VisitorIntentProviderBreakdown(BaseModel):
+    """Provider source distribution in benchmark window"""
+
+    rb2b_events: int
+    leadfeeder_events: int
+    unidentified_provider_events: int
+
+
+class VisitorIntentRateMetrics(BaseModel):
+    """Rate-based benchmark metrics (0.0 - 1.0)"""
+
+    email_identified_rate: float
+    company_identified_rate: float
+    country_identified_rate: float
+    intent_scored_rate: float
+    high_or_medium_intent_rate: float
+    provider_coverage_rate: float
+
+
+class VisitorIntentQualityGates(BaseModel):
+    """Sprint 5 benchmark quality gates"""
+
+    provider_coverage_pass: bool
+    identification_pass: bool
+    scoring_pass: bool
+    overall_pass: bool
+
+
+class VisitorIntentBenchmarkResponse(BaseModel):
+    """Visitor intent benchmark output for Sprint 5.10 validation"""
+
+    supplier_id: int
+    window_days: int
+    total_events: int
+    provider_breakdown: VisitorIntentProviderBreakdown
+    rates: VisitorIntentRateMetrics
+    quality_gates: VisitorIntentQualityGates
+    generated_at: datetime
+
+
+class VisitorIntentOpsMetricsResponse(BaseModel):
+    """Operational metrics for Sprint 5 monitoring dashboard"""
+
+    supplier_id: int
+    window_hours: int
+    total_events: int
+    high_intent_events: int
+    medium_intent_events: int
+    unread_high_intent_notifications: int
+    avg_intent_score: float
+    alert_high_intent_spike: bool
+    alert_unread_backlog: bool
+    generated_at: datetime

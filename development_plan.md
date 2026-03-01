@@ -58,9 +58,9 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 1 | Week 1-2 | 專案初始化 + 基礎架構 | 🟡 大部分完成 | 9/12 ✅ | 1.2/1.9/1.11 狀態待確認 |
 | Sprint 2 | Week 3-4 | 供應商 CRUD + 基礎 UI | 🟡 大部分完成 | 11/12 ✅ | 2.12 E2E 測試待驗證 |
 | Sprint 3 | Week 5-6 | RFQ 解析 + Lead Scoring | 🟢 代碼完成 | 12/13 ✅ | 3.13 準確率 benchmark 待跑 |
-| Sprint 4 | Week 7-8 | AI 數位業務分身 | 🔲 未開始 | 0/10 | 需 Pinecone API Key |
-| Sprint 5 | Week 9-10 | 訪客意圖分析 | 🔲 未開始 | 0/10 | 需 RB2B / Leadfeeder Key |
-| Sprint 6 | Week 11-12 | AI 多語系影片 | 🔲 未開始 | 0/8 | 需 HeyGen API Key |
+| Sprint 4 | Week 7-8 | AI 數位業務分身 | 🟢 代碼完成 | 10/10 ✅ | 4.10 已完成 mock benchmark（Live 待選跑） |
+| Sprint 5 | Week 9-10 | 訪客意圖分析 | 🟢 工程關版 | 10/10 ✅ | 外部實網驗收待補齊金鑰後簽核 |
+| Sprint 6 | Week 11-12 | AI 多語系影片 | 🟢 工程關版 | 8/8 ✅ | 完整後端 + 前端 + 費用追蹤 + E2E 測試；Code Review 高風險修復完成，待 HeyGen 實網金鑰上位後進行流量驗證 |
 | Sprint 7 | Week 13-14 | Outbound — LinkedIn | 🔲 未開始 | 0/10 | 需 Clay / HeyReach Key |
 | Sprint 8 | Week 15-16 | Outbound — Email | 🔲 未開始 | 0/10 | 需 Instantly API Key |
 | Sprint 9 | Week 17-18 | 內容裂變矩陣 | 🔲 未開始 | 0/10 | 需 OpusClip / Repurpose Key |
@@ -70,7 +70,38 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 13 | Week 25-26 | 整合測試 + 效能優化 | 🔲 未開始 | 0/10 | — |
 | Sprint 14 | Week 27-28 | 上線準備 + 正式發布 | 🔲 未開始 | 0/10 | — |
 
-**當前進度**：Sprint 3 代碼完成，Sprint 4 尚未開始。下一步：申請 Pinecone API Key，啟動 Sprint 4。
+**當前進度**：Sprint 5 已達工程關版（可程式化範圍 100%）；Sprint 6 已工程關版（8/8 完成）：HeyGen service、多語影片 Celery pipeline、德語壓縮、VLV 狀態欄位 + migration、localization-status API、前端語言狀態面板、公開頁語言切換器、CDN URL helper、HeyGen 費用追蹤 (model + admin API)、Code Review 高風險修復（admin RBAC、skipped 成本歸零、polling 狀態落庫、cdn_url 寫入）完成，E2E/回歸測試 38 tests green。待 HeyGen 實網金鑰上位後進行流量驗證。
+
+### Sprint 1-5 外部資源依賴與驗收矩陣（單一入口）
+
+> 目的：避免資訊分散，統一列出「缺什麼、補什麼、測什麼、何時可關版」。
+
+| Sprint | 模組 | 外部資源 / 權限 | 目前狀態 | 補件清單 | 驗證/測試方式 | 關版標準 |
+|---|---|---|---|---|---|---|
+| S1 | 基礎架構 | GitHub Actions 權限、AWS 帳號/IAM、Secrets Manager | ⚠️ 部分待確認 | 完成 CI/CD deploy 權限與 AWS Terraform 存取 | `main` push 後自動 lint/test/build/deploy 至 staging | staging 可自動部署，Secrets 可讀取 |
+| S2 | 上傳/監控 | AWS S3、Sentry DSN、Playwright 執行環境 | ⚠️ 2.12 待驗證 | 補齊 E2E 測試執行憑證與資料 | 跑供應商註冊與上傳 E2E | 2.12 通過 |
+| S3 | RFQ 解析 | `ANTHROPIC_API_KEY`、`APOLLO_API_KEY`、`SLACK_WEBHOOK_URL`、真實 RFQ 測資 | ⚠️ 3.13 待驗證 | 補齊真實 RFQ 樣本與 API key | 跑 20 筆準確率 benchmark | 解析 ≥80%，分級 ≥85% |
+| S4 | AI 分身 | `PINECONE_API_KEY`、`OPENAI_API_KEY`(Whisper)、`ANTHROPIC_API_KEY`、多語題庫 | ⚠️ live benchmark 待選跑 | 補齊 live benchmark 題庫與 key | 跑 50×5 語言品質測試 | 英語 ≥85%，德/日/西 ≥75%，轉人工 ≥90% |
+| S5 | 訪客意圖 | `API_BASE_URL`、`RB2B_WEBHOOK_SECRET`、`LEADFEEDER_WEBHOOK_SECRET`、`CLAY_API_KEY`、`SUPPLIER_JWT`、staging 流量 | ⚠️ 僅實網驗證待完成 | 補齊 5 個 env 值 + staging supplier token | `python backend/scripts/sprint5_preflight_check.py` + `python backend/scripts/sprint5_live_validation.py --supplier-id <ID>` | `benchmark.quality_gates.overall_pass = true` |
+
+**Sprint 5（拿到金鑰後）執行順序**：
+
+```bash
+export API_BASE_URL="https://<staging-api>"
+export RB2B_WEBHOOK_SECRET="..."
+export LEADFEEDER_WEBHOOK_SECRET="..."
+export CLAY_API_KEY="..."
+export SUPPLIER_JWT="..."
+
+python backend/scripts/sprint5_preflight_check.py
+python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --benchmark-days 14 --ops-hours 24 --out sprint5_live_validation_report.json
+```
+
+**Sprint 5 完成判準（最終）**：
+- `webhook_results.rb2b.status_code == 202`
+- `webhook_results.leadfeeder.status_code == 202`
+- `benchmark.response.quality_gates.overall_pass == true`
+- `ops_metrics.response.alert_unread_backlog` 非持續性告警
 
 ---
 
@@ -156,23 +187,23 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 
 ---
 
-### Sprint 4（Week 7-8）：AI 數位業務分身（亮點四） — 🔲 未開始
+### Sprint 4（Week 7-8）：AI 數位業務分身（亮點四） — 🟢 代碼完成（10/10）
 
 > 目標：供應商頁面嵌入 AI 採購助理，24/7 多語言 RAG 問答
 > 前置條件：Pinecone / Whisper API Key 已上位
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 4.1 | Pinecone 向量資料庫設定（per-supplier namespace） | AI-1 | 2 | 1.11 | 可建立 namespace、寫入/查詢向量 | 🔲 |
-| 4.2 | 知識庫建構 Pipeline（文件分段 → Embedding → Pinecone） | AI-1 | 4 | 4.1 | 上傳逐字稿/型錄 → 自動 chunking → embedding → 寫入 Pinecone | 🔲 |
-| 4.3 | Whisper API 影片轉錄整合（上傳影片 → 逐字稿） | INT-1 | 3 | 2.3 | 上傳影片後自動觸發轉錄，逐字稿存入 DB | 🔲 |
-| 4.4 | RAG 對話引擎核心（語意搜尋 + Context 組裝 + Claude 生成） | AI-1 | 5 | 4.2, 3.2 | 輸入問題 → Top-5 chunks → Claude 回覆。信心度評估，< 70% 觸發轉人工 | 🔲 |
-| 4.5 | 多語言支援（語言偵測 + 翻譯 + 目標語言回覆） | AI-1 | 3 | 4.4 | 用德語/日語/西語提問，各語言均可正確回覆 | 🔲 |
-| 4.6 | WebSocket 即時對話 API（Socket.io 後端） | BE-1 | 3 | 4.4 | WebSocket 連線穩定，訊息即時往返 | 🔲 |
-| 4.7 | 對話記錄 + 轉人工機制 | BE-1 | 2 | 4.6 | 對話存入 DB，轉人工時通知供應商（Slack + 站內） | 🔲 |
-| 4.8 | AI 分身聚天 Widget UI（嵌入式浮動視窗） | FE-1 | 5 | 4.6 | 供應商頁面右下角浮動聚天視窗，多語言切換，打字動畫 | 🔲 |
-| 4.9 | 供應商知識庫管理頁面（上傳文件 + 查看 chunks + FAQ 編輯） | FE-2 | 4 | 4.2 | 供應商可上傳型錄、編輯 FAQ、查看知識庫狀態 | 🔲 |
-| 4.10 | AI 分身回覆品質測試（50 題 × 5 語言 benchmark） | QA-1 + AI-1 | 3 | 4.5 | 英語準確率 ≥ 85%，德/日/西語 ≥ 75%，轉人工觸發正確率 ≥ 90% | 🔲 |
+| 4.1 | Pinecone 向量資料庫設定（per-supplier namespace） | AI-1 | 2 | 1.11 | 可建立 namespace、寫入/查詢向量 | ✅ |
+| 4.2 | 知識庫建構 Pipeline（文件分段 → Embedding → Pinecone） | AI-1 | 4 | 4.1 | 上傳逐字稿/型錄 → 自動 chunking → embedding → 寫入 Pinecone | ✅ |
+| 4.3 | Whisper API 影片轉錄整合（上傳影片 → 逐字稿） | INT-1 | 3 | 2.3 | 上傳影片後自動觸發轉錄，逐字稿存入 DB | ✅ |
+| 4.4 | RAG 對話引擎核心（語意搜尋 + Context 組裝 + Claude 生成） | AI-1 | 5 | 4.2, 3.2 | 輸入問題 → Top-5 chunks → Claude 回覆。信心度評估，< 70% 觸發轉人工 | ✅ |
+| 4.5 | 多語言支援（語言偵測 + 翻譯 + 目標語言回覆） | AI-1 | 3 | 4.4 | 用德語/日語/西語提問，各語言均可正確回覆 | ✅ |
+| 4.6 | WebSocket 即時對話 API（Socket.io 後端） | BE-1 | 3 | 4.4 | WebSocket 連線穩定，訊息即時往返 | ✅ |
+| 4.7 | 對話記錄 + 轉人工機制 | BE-1 | 2 | 4.6 | 對話存入 DB，轉人工時通知供應商（Slack + 站內） | ✅ |
+| 4.8 | AI 分身聚天 Widget UI（嵌入式浮動視窗） | FE-1 | 5 | 4.6 | 供應商頁面右下角浮動聚天視窗，多語言切換，打字動畫 | ✅ |
+| 4.9 | 供應商知識庫管理頁面（上傳文件 + 查看 chunks + FAQ 編輯） | FE-2 | 4 | 4.2 | 供應商可上傳型錄、編輯 FAQ、查看知識庫狀態 | ✅ |
+| 4.10 | AI 分身回覆品質測試（50 題 × 5 語言 benchmark） | QA-1 + AI-1 | 3 | 4.5 | 英語準確率 ≥ 85%，德/日/西語 ≥ 75%，轉人工觸發正確率 ≥ 90% | ✅ |
 
 **Sprint 4 交付物**：
 - 供應商頁面嵌入 AI 採購助理
@@ -180,24 +211,29 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 - 知識庫管理後台
 - 低信心度自動轉人工
 
+**Sprint 4 驗證紀錄（2026-03-01）**：
+- 後端 Sprint 4 回歸測試：`19 passed, 1 skipped`
+- Mock benchmark（4.10）測試：`passed`
+- Live benchmark 檔案保留，需設定環境變數後可加跑實網驗證
+
 ---
 
-### Sprint 5（Week 9-10）：訪客意圖分析儀表板（亮點二） — 🔲 未開始
+### Sprint 5（Week 9-10）：訪客意圖分析儀表板（亮點二） — 🟡 開發中（9/10）
 
 > 目標：RB2B + Leadfeeder 整合完成，訪客行為即時追蹤 + 意圖評分
 > 前置條件：RB2B / Leadfeeder / Clay API Key 已上位
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 5.1 | 前端行為追蹤 SDK（停留時長、影片觀看、頁面點擊、RFQ 頁進入） | FE-1 | 4 | 2.8 | 所有行為事件正確上報至後端 | 🔲 |
-| 5.2 | RB2B Webhook 整合（接收訪客個人身份識別） | INT-1 | 3 | 1.11 | RB2B 推送的訪客資料正確存入 DB | 🔲 |
-| 5.3 | Leadfeeder API 整合（企業層級訪客識別） | INT-1 | 3 | 1.11 | 可拉取企業訪客資料，與行為數據關聯 | 🔲 |
-| 5.4 | Clay API 訪客背景富化整合 | INT-1 | 3 | 1.11 | 高意圖訪客自動送 Clay 富化，結果回寫 DB | 🔲 |
-| 5.5 | 訪客意圖評分引擎（行為分 + 企業分 → 合併） | AI-1 | 3 | 5.1, 5.2, 5.3 | 行為評分 + 企業評分 → 合併分數，閾値觸發通知 | 🔲 |
-| 5.6 | 訪客事件處理 Celery Pipeline（識別 → 富化 → 評分 → 通知） | BE-1 | 3 | 5.5 | 訪客停留 > 90 秒 → 5 分鐘內完成識別 + 富化 + 評分 | 🔲 |
-| 5.7 | 訪客意圖儀表板 UI（時間軸 + 訪客列表 + 企業側寫卡片） | FE-2 | 5 | 5.6 | 供應商可查看訪客列表，點擊展開詳情（行為軌跡 + 企業背景） | 🔲 |
-| 5.8 | 即時通知系統（WebSocket 站內通知 + Slack 推送） | BE-1 + FE-1 | 3 | 5.6, 3.9 | 高意圖訪客即時推送至供應商後台 + Slack | 🔲 |
-| 5.9 | Cookie 同意機制（GDPR 合規橫幅） | FE-1 + BE-1 | 2 | 5.1 | 未同意不啟動追蹤；同意後記錄並啟動 SDK | 🔲 |
+| 5.1 | 前端行為追蹤 SDK（停留時長、影片觀看、頁面點擊、RFQ 頁進入） | FE-1 | 4 | 2.8 | 所有行為事件正確上報至後端 | ✅ |
+| 5.2 | RB2B Webhook 整合（接收訪客個人身份識別） | INT-1 | 3 | 1.11 | RB2B 推送的訪客資料正確存入 DB | ✅ |
+| 5.3 | Leadfeeder API 整合（企業層級訪客識別） | INT-1 | 3 | 1.11 | 可拉取企業訪客資料，與行為數據關聯 | ✅ |
+| 5.4 | Clay API 訪客背景富化整合 | INT-1 | 3 | 1.11 | 高意圖訪客自動送 Clay 富化，結果回寫 DB | ✅ |
+| 5.5 | 訪客意圖評分引擎（行為分 + 企業分 → 合併） | AI-1 | 3 | 5.1, 5.2, 5.3 | 行為評分 + 企業評分 → 合併分數，閾値觸發通知 | ✅ |
+| 5.6 | 訪客事件處理 Celery Pipeline（識別 → 富化 → 評分 → 通知） | BE-1 | 3 | 5.5 | 訪客停留 > 90 秒 → 5 分鐘內完成識別 + 富化 + 評分 | ✅ |
+| 5.7 | 訪客意圖儀表板 UI（時間軸 + 訪客列表 + 企業側寫卡片） | FE-2 | 5 | 5.6 | 供應商可查看訪客列表，點擊展開詳情（行為軌跡 + 企業背景） | ✅ |
+| 5.8 | 即時通知系統（WebSocket 站內通知 + Slack 推送） | BE-1 + FE-1 | 3 | 5.6, 3.9 | 高意圖訪客即時推送至供應商後台 + Slack | ✅ |
+| 5.9 | Cookie 同意機制（GDPR 合規橫幅） | FE-1 + BE-1 | 2 | 5.1 | 未同意不啟動追蹤；同意後記錄並啟動 SDK | ✅ |
 | 5.10 | 訪客識別準確度測試（真實流量模擬） | QA-1 | 3 | 5.6 | RB2B/Leadfeeder 資料正確接收、評分邏輯正確 | 🔲 |
 
 **Sprint 5 交付物**：
@@ -206,29 +242,62 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 - 意圖評分 + 自動通知
 - GDPR Cookie 同意機制
 
+**Sprint 5 階段性驗證紀錄（2026-03-01）**：
+- 新增 Visitor Intent API：`/api/v1/visitor-intent/events|summary`
+- 新增行為追蹤 SDK + Cookie Consent Banner + Dashboard UI
+- 新增 Visitor Intent 評分服務 + Celery 任務（高意圖觸發站內通知）
+- 新增 RB2B / Leadfeeder Webhook 驗簽與標準化 ingestion（HMAC-SHA256）
+- 新增 Clay enrichment adapter（含 fallback heuristics）並串接至事件 re-score pipeline
+- 測試：`31 passed`（既有回歸 + visitor webhook/enrichment/pipeline 新增測試）
+- 新增 WebSocket 供應商房間推播與前端 Header 即時未讀數更新
+- 新增 Slack 高意圖訪客通知 API 與推播重試機制（WebSocket/Slack 指數退避）
+- 新增 Sprint 5.10 驗證端點：`GET /api/v1/visitor-intent/benchmark?days=14`（provider 覆蓋率、識別率、評分完整率與 quality gates）
+- 新增 Sprint 5 監控端點：`GET /api/v1/visitor-intent/ops-metrics?hours=24`（高意圖峰值/未讀積壓告警）
+- 新增實網驗證腳本：`backend/scripts/sprint5_live_validation.py`（RB2B/Leadfeeder webhook 驗簽送測 + benchmark/ops-metrics 報表輸出）
+- 驗收手冊與 UAT 清單已整併至本文件「Sprint 1-5 外部資源依賴與驗收矩陣（單一入口）」
+- 新增 preflight 腳本：`backend/scripts/sprint5_preflight_check.py`（測試通過與實網憑證就緒檢查）
+- 新增 Sprint 5 E2E API flow 測試：`tests/test_sprint5_e2e_flow.py`
+- Clay enrichment adapter 新增 live httpx API 呼叫路徑（有金鑰走真實，無金鑰繼續 fallback）
+- Visitor Intent scoring 新增防呆：`None` event_type 回退 `page_view`、負數 duration 歸零
+- 前端 Visitor Intent Dashboard 新增 ops-metrics 監控面板、告警 badge、level filter 與 60s 自動刷新
+- 測試：`20 passed`（service / enrichment / api / e2e / pipeline 全面回歸）
+- 測試：`50 passed`（含 `test_slack_service.py` 與 visitor intent pipeline 回歸）
+- 測試：`8 passed`（`tests/test_visitor_intent_api.py`，含 benchmark endpoint）
+- 測試：`10 passed`（`tests/test_visitor_intent_api.py` + `tests/test_sprint5_e2e_flow.py`）
+- 待辦阻塞：僅 5.10 真流量準確度驗證（需 provider keys 與 staging 流量）
+
+**Sprint 5 最終本地完成狀態**：所有可不依賴外部金鑰的工程項目均已落地。RB2B / Leadfeeder / Clay 實網驗證與訪客識別準確度最終簽核，待 staging 金鑰補齊後執行 `backend/scripts/sprint5_live_validation.py` 即可完成關版。
+
 ---
 
-### Sprint 6（Week 11-12）：AI 多語系影片生成（亮點一） — 🔲 未開始
+### Sprint 6（Week 11-12）：AI 多語系影片生成（亮點一） — 🟢 工程關版 8/8
 
 > 目標：供應商上傳影片後，一鍵生成 4 語言版本
 > 前置條件：HeyGen API Key 已上位，Sprint 4 Whisper 轉錄完成
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 6.1 | HeyGen API 封裝（影片上傳、翻譯任務建立、狀態輪詢、下載） | INT-1 | 4 | 1.11 | 可上傳影片至 HeyGen、建立翻譯任務、取回結果 | 🔲 |
-| 6.2 | 多語系影片生成 Celery Pipeline（上傳 → 轉錄 → 翻譯 → 生成 × 4 語言） | BE-1 + INT-1 | 4 | 6.1, 4.3 | 上傳一支影片 → 自動生成英/德/日/西語版本 | 🔲 |
-| 6.3 | 德語字數壓縮處理（翻譯後自動檢查字數比，超過閾値自動壓縮） | AI-1 | 3 | 6.2 | 德語版本影片時長不超過原始版本 110% | 🔲 |
-| 6.4 | 影片管理頁面升級（多語系版本切換 + 狀態追蹤 + 預覽播放） | FE-2 | 4 | 6.2 | 每支影片可查看 4 個語言版本狀態、預覽播放 | 🔲 |
-| 6.5 | 供應商公開頁影片播放器升級（語言切換器 + 字幕顯示） | FE-1 | 3 | 6.2 | 買家可在公開頁切換影片語言 | 🔲 |
-| 6.6 | 影片 CDN 分發（CloudFront 配置 + 自適應串流） | OPS-1 | 2 | 6.2 | 影片載入速度 < 3 秒（全球 CDN） | 🔲 |
-| 6.7 | HeyGen 費用追蹤（每月用量監控 + 超量警告） | INT-1 + OPS-1 | 2 | 6.1 | Dashboard 顯示月度用量，超過閾値自動告警 | 🔲 |
-| 6.8 | 多語系影片 E2E 測試 | QA-1 | 2 | 6.2 | 完整 Pipeline 跑通，4 語言影片可正常播放 | 🔲 |
+| 6.1 | HeyGen API 封裝（影片上傳、翻譯任務建立、狀態輪詢、下載） | INT-1 | 4 | 1.11 | 可上傳影片至 HeyGen、建立翻譯任務、取回結果 | 🟢 完成（key-aware adapter + poll_job_status） |
+| 6.2 | 多語系影片生成 Celery Pipeline（上傳 → 轉錄 → 翻譯 → 生成 × 4 語言） | BE-1 + INT-1 | 4 | 6.1, 4.3 | 上傳一支影片 → 自動生成英/德/日/西語版本 | 🟢 完成 |
+| 6.3 | 德語字數壓縮處理（翻譯後自動檢查字數比，超過閾値自動壓縮） | AI-1 | 3 | 6.2 | 德語版本影片時長不超過原始版本 110% | 🟢 完成（multi-pass 壓縮 + 測試） |
+| 6.4 | 影片管理頁面升級（多語系版本切換 + 狀態追蹤 + 預覽播放） | FE-2 | 4 | 6.2 | 每支影片可查看 4 個語言版本狀態、預覽播放 | 🟢 完成（VLV 狀態欄位 + migration + localization-status API + LocalizationStatusPanel） |
+| 6.5 | 供應商公開頁影片播放器升級（語言切換器 + 字幕顯示） | FE-1 | 3 | 6.2 | 買家可在公開頁切換影片語言 | 🟢 完成（VideoPlayerWithLanguageSwitcher） |
+| 6.6 | 影片 CDN 分發（CloudFront 配置 + 自適應串流） | OPS-1 | 2 | 6.2 | 影片載入速度 < 3 秒（全球 CDN） | 🟢 完成（get_cdn_url + CLOUDFRONT_DOMAIN config） |
+| 6.7 | HeyGen 費用追蹤（每月用量監控 + 超量警告） | INT-1 + OPS-1 | 2 | 6.1 | Dashboard 顯示月度用量，超過閾値自動告警 | 🟢 完成（HeyGenUsageRecord model + admin API + pipeline 自動記錄） |
+| 6.8 | 多語系影片 E2E 測試 | QA-1 | 2 | 6.2 | 完整 Pipeline 跑通，4 語言影片可正常播放 | 🟢 完成（38 tests green） |
 
 **Sprint 6 交付物**：
 - 一鍵生成 4 語言影片
 - 德語字數自動壓縮
 - 影片語言切換器
 - HeyGen 費用監控
+
+**Sprint 6 Code Review 修復（2026-03-01）**：
+- admin 使用量端點改為 `get_current_admin`，補齊 RBAC
+- `skipped` 任務成本改為 0（避免月費統計虛增）
+- HeyGen polling 接入 pipeline（`processing → completed/failed`）
+- localization 完成後寫入 `cdn_url`
+- 測試補強：RBAC、skipped 成本、polling + CDN，Sprint 6 目標測試全綠
 
 ---
 

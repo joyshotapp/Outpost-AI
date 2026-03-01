@@ -10,6 +10,11 @@ from app.config import settings
 from app.database import dispose_db, init_db
 from app.sentry_init import init_sentry
 
+try:
+    from app.socket_server import socket_app
+except ModuleNotFoundError:
+    socket_app = None
+
 # Initialize Sentry error tracking
 init_sentry()
 
@@ -52,6 +57,8 @@ app.add_middleware(
 
 # Include API v1 routes
 app.include_router(v1_router)
+if socket_app is not None:
+    app.mount("/ws", socket_app)
 
 
 @app.get("/health")

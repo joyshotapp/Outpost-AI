@@ -32,6 +32,7 @@ celery_app.conf.task_routes = {
     "app.tasks.email.*": {"queue": "email"},
     "app.tasks.video.*": {"queue": "video"},
     "app.tasks.analytics.*": {"queue": "analytics"},
+    "app.tasks.visitor_intent.*": {"queue": "analytics"},
     "app.tasks.ai.*": {"queue": "ai"},
 }
 
