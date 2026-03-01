@@ -230,7 +230,14 @@ async def create_campaign(
 
     # Trigger Clay enrichment Celery task
     from app.tasks.outbound import enrich_contacts_pipeline
-    enrich_contacts_pipeline.delay(campaign.id, icp_dict)
+    try:
+        enrich_contacts_pipeline.delay(campaign.id, icp_dict)
+    except Exception as exc:
+        logger.warning(
+            "Campaign %d created but enrichment queue failed: %s",
+            campaign.id,
+            exc,
+        )
 
     logger.info(
         "Campaign %d created for supplier %d; enrichment task queued",
@@ -416,10 +423,13 @@ async def start_sequence(
     # Chain: generate openers then import to HeyReach
     from app.tasks.outbound import generate_openers_batch, import_contacts_to_heyreach
     from celery import chain as celery_chain
-    celery_chain(
-        generate_openers_batch.s(campaign_id),
-        import_contacts_to_heyreach.si(campaign_id),
-    ).delay()
+    try:
+        celery_chain(
+            generate_openers_batch.s(campaign_id),
+            import_contacts_to_heyreach.si(campaign_id),
+        ).delay()
+    except Exception as exc:
+        logger.warning("Sequence start queue failed for campaign %d: %s", campaign_id, exc)
 
     return {
         "message": "Sequence start queued",

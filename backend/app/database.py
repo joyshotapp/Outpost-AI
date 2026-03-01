@@ -30,7 +30,6 @@ async_session_maker = async_sessionmaker(
     autocommit=False,
 )
 
-# Base class for all models
 Base = declarative_base()
 
 

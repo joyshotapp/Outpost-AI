@@ -105,7 +105,7 @@ def test_create_knowledge_document_success():
     _override_dependencies(user, db)
 
     with patch("app.api.v1.knowledge_base.get_pinecone_knowledge_service") as mock_get_service, \
-         patch("app.api.v1.knowledge_base.ingest_knowledge_document.delay") as mock_delay:
+            patch("app.api.v1.knowledge_base.ingest_knowledge_document") as mock_task:
         service = MagicMock()
         service.namespace_for_supplier.return_value = "supplier-6"
         mock_get_service.return_value = service
@@ -125,7 +125,7 @@ def test_create_knowledge_document_success():
     data = response.json()
     assert data["supplier_id"] == 6
     assert data["status"] == "pending"
-    mock_delay.assert_called_once_with(1)
+    mock_task.delay.assert_called_once_with(1)
 
 
 def test_query_knowledge_base_success():

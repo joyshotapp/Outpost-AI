@@ -137,7 +137,7 @@ def test_sprint5_e2e_flow_webhook_to_metrics():
 
     with patch.object(settings, "RB2B_WEBHOOK_SECRET", "rb2b-secret"), \
          patch.object(settings, "LEADFEEDER_WEBHOOK_SECRET", "lead-secret"), \
-         patch("app.api.v1.visitor_intent.process_visitor_intent_event.delay") as mock_delay:
+            patch("app.api.v1.visitor_intent.process_visitor_intent_event") as mock_task:
         rb2b_sig = hmac.new(b"rb2b-secret", rb2b_raw, hashlib.sha256).hexdigest()
         rb2b_resp = client.post(
             "/api/v1/visitor-intent/webhooks/rb2b",
@@ -168,4 +168,4 @@ def test_sprint5_e2e_flow_webhook_to_metrics():
     assert ops_data["supplier_id"] == 19
     assert ops_data["total_events"] == 24
 
-    assert mock_delay.call_count == 2
+    assert mock_task.delay.call_count == 2

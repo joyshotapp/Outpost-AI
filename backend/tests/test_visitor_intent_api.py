@@ -93,7 +93,7 @@ def test_ingest_visitor_event_success():
 
     app.dependency_overrides[get_db] = _get_db_override
 
-    with patch("app.api.v1.visitor_intent.process_visitor_intent_event.delay") as mock_delay:
+    with patch("app.api.v1.visitor_intent.process_visitor_intent_event") as mock_task:
         response = client.post(
             "/api/v1/visitor-intent/events",
             json={
@@ -111,7 +111,7 @@ def test_ingest_visitor_event_success():
     data = response.json()
     assert data["accepted"] is True
     assert data["queued_for_scoring"] is True
-    mock_delay.assert_called_once_with(1)
+    mock_task.delay.assert_called_once_with(1)
 
 
 def test_ingest_visitor_event_without_consent_is_skipped():
@@ -158,7 +158,7 @@ def test_ingest_rb2b_webhook_success_with_valid_signature():
     app.dependency_overrides[get_db] = _get_db_override
 
     with patch.object(settings, "RB2B_WEBHOOK_SECRET", "rb2b-secret"), \
-         patch("app.api.v1.visitor_intent.process_visitor_intent_event.delay") as mock_delay:
+         patch("app.api.v1.visitor_intent.process_visitor_intent_event") as mock_task:
         signature = hmac.new(b"rb2b-secret", raw, hashlib.sha256).hexdigest()
         response = client.post(
             "/api/v1/visitor-intent/webhooks/rb2b",
@@ -171,7 +171,7 @@ def test_ingest_rb2b_webhook_success_with_valid_signature():
 
     assert response.status_code == 202
     assert response.json()["accepted"] is True
-    mock_delay.assert_called_once_with(1)
+    mock_task.delay.assert_called_once_with(1)
     created_event = db._added_entities[0]
     assert created_event.event_type == "rfq_page_enter"
     assert created_event.visitor_country == "US"
@@ -202,7 +202,7 @@ def test_ingest_leadfeeder_webhook_success_with_valid_signature():
     app.dependency_overrides[get_db] = _get_db_override
 
     with patch.object(settings, "LEADFEEDER_WEBHOOK_SECRET", "lead-secret"), \
-         patch("app.api.v1.visitor_intent.process_visitor_intent_event.delay") as mock_delay:
+         patch("app.api.v1.visitor_intent.process_visitor_intent_event") as mock_task:
         signature = hmac.new(b"lead-secret", raw, hashlib.sha256).hexdigest()
         response = client.post(
             "/api/v1/visitor-intent/webhooks/leadfeeder",
@@ -215,7 +215,7 @@ def test_ingest_leadfeeder_webhook_success_with_valid_signature():
 
     assert response.status_code == 202
     assert response.json()["accepted"] is True
-    mock_delay.assert_called_once_with(1)
+    mock_task.delay.assert_called_once_with(1)
     created_event = db._added_entities[0]
     assert created_event.visitor_company == "Beta GmbH"
     assert created_event.visitor_country == "DE"

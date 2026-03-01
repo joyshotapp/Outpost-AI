@@ -15,7 +15,9 @@ class TestApolloService:
     @pytest.fixture
     async def apollo_service(self):
         """Create Apollo service instance"""
-        return ApolloService()
+        service = ApolloService()
+        service.redis_client = None
+        return service
 
     @pytest.mark.asyncio
     async def test_search_company_by_domain(self, apollo_service):
@@ -260,7 +262,7 @@ class TestApolloService:
     async def test_clear_cache_success(self, apollo_service):
         """Test clearing cache for a company"""
         with patch.object(apollo_service, "redis_client") as mock_redis:
-            mock_redis.delete.return_value = 1
+            mock_redis.delete = AsyncMock(return_value=1)
 
             result = await apollo_service.clear_cache(domain="testcorp.com")
 
@@ -277,7 +279,7 @@ class TestApolloService:
     @pytest.mark.asyncio
     async def test_redis_connection_failure_fallback(self):
         """Test graceful fallback when Redis is unavailable"""
-        with patch("app.services.apollo.redis.from_url") as mock_redis:
+        with patch("app.services.apollo.aioredis.from_url") as mock_redis:
             mock_redis.side_effect = Exception("Connection refused")
 
             service = ApolloService()

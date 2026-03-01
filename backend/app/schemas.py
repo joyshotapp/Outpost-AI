@@ -131,8 +131,8 @@ class SupplierResponse(BaseModel):
     is_verified: bool
     is_active: bool
     view_count: int
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True

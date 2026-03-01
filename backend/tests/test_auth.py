@@ -4,8 +4,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.database import Base
+from app.models.base import Base
 from app.main import app
 from app.dependencies import get_db
 from app.models import User, UserRole
@@ -21,6 +22,8 @@ async def test_db():
         TEST_DATABASE_URL,
         echo=False,
         future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
 
     async with engine.begin() as conn:

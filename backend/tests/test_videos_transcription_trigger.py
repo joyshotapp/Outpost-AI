@@ -81,7 +81,7 @@ def test_create_video_enqueues_whisper_transcription():
     db = _make_mock_db(execute_results=[[supplier], []])
     _override_dependencies(current_user, db)
 
-    with patch("app.api.v1.videos.transcribe_video_with_whisper.delay") as mock_delay:
+    with patch("app.api.v1.videos.transcribe_video_with_whisper") as mock_task:
         response = client.post(
             "/api/v1/videos",
             json={
@@ -93,4 +93,4 @@ def test_create_video_enqueues_whisper_transcription():
 
     assert response.status_code == 201
     video_id = response.json()["id"]
-    mock_delay.assert_called_once_with(video_id)
+    mock_task.delay.assert_called_once_with(video_id)

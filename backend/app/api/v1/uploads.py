@@ -130,7 +130,7 @@ async def check_upload_status(
         )
 
 
-@router.delete("/{object_key}")
+@router.delete("/{object_key:path}")
 async def delete_uploaded_file(
     object_key: str,
     current_user: User = Depends(get_current_user),

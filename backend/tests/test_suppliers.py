@@ -4,10 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
-from app.database import Base
+from app.models.base import Base
 from app.main import app
-from app.dependencies import get_db
+from app.dependencies import get_db, get_current_user
 from app.models import User, Supplier, UserRole
 from app.security import hash_password
 
@@ -21,6 +22,8 @@ async def test_db():
         TEST_DATABASE_URL,
         echo=False,
         future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
 
     async with engine.begin() as conn:
@@ -40,14 +43,22 @@ async def test_db():
 
 
 @pytest.fixture
-def client(test_db):
+def client(test_db, test_user):
     """Create test client"""
 
     async def override_get_db():
         yield test_db
 
+    def override_get_current_user():
+        return test_user
+
     app.dependency_overrides[get_db] = override_get_db
-    return TestClient(app)
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    client_instance = TestClient(app)
+    yield client_instance
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
@@ -148,7 +159,7 @@ class TestSupplierCRUD:
         assert "already exists" in response.json()["detail"]
 
     def test_create_supplier_invalid_user(self, client):
-        """Test creation with non-existent user"""
+        """Payload user_id is ignored; authenticated user is used."""
         response = client.post(
             "/api/v1/suppliers",
             json={
@@ -159,8 +170,8 @@ class TestSupplierCRUD:
             },
         )
 
-        assert response.status_code == 404
-        assert "User not found" in response.json()["detail"]
+        assert response.status_code == 201
+        assert response.json()["user_id"] != 999
 
     def test_list_suppliers(self, client, test_supplier):
         """Test supplier list endpoint"""

@@ -4,10 +4,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from unittest.mock import patch, MagicMock
 from botocore.exceptions import ClientError
 
-from app.database import Base
+from app.models.base import Base
 from app.main import app
 from app.dependencies import get_db, get_current_user
 from app.models import User, UserRole
@@ -23,6 +24,8 @@ async def test_db():
         TEST_DATABASE_URL,
         echo=False,
         future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
     )
 
     async with engine.begin() as conn:
@@ -68,8 +71,29 @@ def client(test_db, test_user):
     def override_get_current_user():
         return test_user
 
+    import app.services.s3 as s3_module
+    s3_module._s3_service = None
+
     app.dependency_overrides[get_db] = override_get_db
     app.dependency_overrides[get_current_user] = override_get_current_user
+
+    client_instance = TestClient(app)
+    yield client_instance
+
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def unauth_client(test_db):
+    """Client without auth override (for 401 checks)."""
+
+    async def override_get_db():
+        yield test_db
+
+    import app.services.s3 as s3_module
+    s3_module._s3_service = None
+
+    app.dependency_overrides[get_db] = override_get_db
 
     client_instance = TestClient(app)
     yield client_instance
@@ -151,9 +175,9 @@ class TestS3PresignedUrl:
         assert response.status_code == 400
         assert "exceeds maximum" in response.json()["detail"]
 
-    def test_generate_presigned_url_no_auth(self, client):
+    def test_generate_presigned_url_no_auth(self, unauth_client):
         """Test presigned URL generation without authentication"""
-        response = client.post(
+        response = unauth_client.post(
             "/api/v1/uploads/presigned-url",
             json={
                 "filename": "test.mp4",
@@ -304,9 +328,9 @@ class TestS3UploadStatus:
         data = response.json()
         assert data["exists"] is False
 
-    def test_check_upload_status_no_auth(self, client):
+    def test_check_upload_status_no_auth(self, unauth_client):
         """Test upload status check without authentication"""
-        response = client.post(
+        response = unauth_client.post(
             "/api/v1/uploads/status",
             json={"object_key": "videos/1/test.mp4"},
         )
@@ -333,9 +357,9 @@ class TestS3FileDelete:
         data = response.json()
         assert "deleted successfully" in data["message"]
 
-    def test_delete_file_no_auth(self, client):
+    def test_delete_file_no_auth(self, unauth_client):
         """Test file deletion without authentication"""
-        response = client.delete(
+        response = unauth_client.delete(
             "/api/v1/uploads/videos%2F1%2Ftest.mp4",
         )
 

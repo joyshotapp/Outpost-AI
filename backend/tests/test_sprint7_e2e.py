@@ -11,8 +11,7 @@ Tests cover:
 """
 
 import asyncio
-import json
-from types import SimpleNamespace
+from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -74,9 +73,14 @@ async def s7_supplier_user(s7_db):
     supplier = Supplier(
         user_id=user.id,
         company_name="Sprint7 Factory",
+        company_slug="sprint7-factory",
         company_description="Test",
         country="DE",
-        product_categories='["Machinery"]',
+        industry="Manufacturing",
+        main_products="Machinery",
+        is_active=True,
+        is_verified=True,
+        view_count=0,
     )
     s7_db.add(supplier)
     await s7_db.commit()
@@ -98,6 +102,14 @@ def _login(client, email="sprint7@example.com", password="pass1234"):
     return resp.json()["access_token"]
 
 
+def _session_ctx_factory(session: AsyncSession):
+    @asynccontextmanager
+    async def _ctx():
+        yield session
+
+    return _ctx
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # 7.1 — Clay enrichment pipeline (stub mode)
 # ──────────────────────────────────────────────────────────────────────────────
@@ -110,7 +122,7 @@ class TestClayEnrichmentPipeline:
         """POST /outbound/campaigns → 201, enrichment task queued."""
         token = _login(s7_client)
 
-        with patch("app.tasks.outbound.enrich_contacts_pipeline.delay") as mock_task:
+        with patch("app.tasks.outbound.enrich_contacts_pipeline") as mock_task:
             resp = s7_client.post(
                 "/api/v1/outbound/campaigns",
                 json={
@@ -131,7 +143,7 @@ class TestClayEnrichmentPipeline:
         data = resp.json()
         assert data["campaign_name"] == "Test Q1 2026"
         assert data["clay_enrichment_status"] == "pending"
-        mock_task.assert_called_once()
+        mock_task.delay.assert_called_once()
 
     def test_clay_stub_pipeline_saves_contacts(self, s7_db, s7_supplier_user):
         """_enrich_contacts_pipeline_async stub saves 0 contacts (no real Clay API)."""
@@ -152,7 +164,8 @@ class TestClayEnrichmentPipeline:
             await s7_db.refresh(campaign)
 
             icp = {"industries": ["Automotive"], "limit": 10}
-            result = await _enrich_contacts_pipeline_async(campaign.id, icp)
+            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+                result = await _enrich_contacts_pipeline_async(campaign.id, icp)
             return result, campaign.id
 
         result, camp_id = asyncio.run(_run())
@@ -200,7 +213,8 @@ class TestHeyReachSequenceLaunch:
             await s7_db.commit()
             await s7_db.refresh(contact)
 
-            result = await _import_contacts_to_heyreach_async(campaign.id)
+            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+                result = await _import_contacts_to_heyreach_async(campaign.id)
             return result, campaign.id
 
         result, camp_id = asyncio.run(_run())
@@ -214,7 +228,7 @@ class TestHeyReachSequenceLaunch:
             return r.scalars().all()
 
         seqs = asyncio.run(check_seq())
-        assert len(seqs) >= 0  # stub may return 1
+        assert len(seqs) >= 1
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -235,7 +249,7 @@ class TestOutboundCampaignCRUD:
 
     def test_create_and_get_campaign(self, s7_client, s7_supplier_user):
         token = _login(s7_client)
-        with patch("app.tasks.outbound.enrich_contacts_pipeline.delay"):
+        with patch("app.tasks.outbound.enrich_contacts_pipeline"):
             resp = s7_client.post(
                 "/api/v1/outbound/campaigns",
                 json={
@@ -257,7 +271,7 @@ class TestOutboundCampaignCRUD:
 
     def test_pause_and_resume_campaign(self, s7_client, s7_supplier_user):
         token = _login(s7_client)
-        with patch("app.tasks.outbound.enrich_contacts_pipeline.delay"):
+        with patch("app.tasks.outbound.enrich_contacts_pipeline"):
             camp = s7_client.post(
                 "/api/v1/outbound/campaigns",
                 json={"campaign_name": "Pause Test", "campaign_type": "linkedin", "icp_criteria": {}},
@@ -283,7 +297,7 @@ class TestOutboundCampaignCRUD:
 
     def test_cannot_resume_non_paused_campaign(self, s7_client, s7_supplier_user):
         token = _login(s7_client)
-        with patch("app.tasks.outbound.enrich_contacts_pipeline.delay"):
+        with patch("app.tasks.outbound.enrich_contacts_pipeline"):
             camp = s7_client.post(
                 "/api/v1/outbound/campaigns",
                 json={"campaign_name": "Draft Camp", "campaign_type": "linkedin", "icp_criteria": {}},
@@ -448,7 +462,8 @@ class TestLinkedInSafetyEnforcement:
 
                 with patch("app.tasks.outbound.settings.LINKEDIN_DAILY_CONNECTION_LIMIT", 25):
                     with patch("app.tasks.outbound.settings.LINKEDIN_DAILY_MESSAGE_LIMIT", 30):
-                        result = await _enforce_linkedin_safety_async(campaign.id)
+                        with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+                            result = await _enforce_linkedin_safety_async(campaign.id)
 
             return result
 
@@ -484,7 +499,8 @@ class TestLinkedInSafetyEnforcement:
 
                 with patch("app.tasks.outbound.settings.LINKEDIN_DAILY_CONNECTION_LIMIT", 25):
                     with patch("app.tasks.outbound.settings.LINKEDIN_DAILY_MESSAGE_LIMIT", 30):
-                        result = await _enforce_linkedin_safety_async(campaign.id)
+                        with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+                            result = await _enforce_linkedin_safety_async(campaign.id)
             return result
 
         result = asyncio.run(_run())
