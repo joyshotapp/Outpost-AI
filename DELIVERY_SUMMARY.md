@@ -5,6 +5,30 @@
 
 ---
 
+## 🆕 最新更新（2026-03-01）
+
+### Sprint 7 正式交付已上線
+- **主提交**：`919ed2a`（Sprint 7 complete）
+- **內容涵蓋**：Outbound 全鏈路（Clay + HeyReach + LinkedIn）
+   - DB Migration + Models
+   - Clay / HeyReach Service Layer
+   - Celery Pipeline（enrich / opener / import / safety / reset）
+   - Outbound + Webhook API
+   - Supplier Outbound 4 個頁面 UI
+   - Sprint 7 E2E 測試
+
+### Post-Sprint 7 Debug 穩定化
+- **修復提交**：`e3e532a`（fix(testing): stabilize backend test infra and post-sprint7 regressions）
+- **修復重點**：
+   - 測試環境 Celery eager 化，移除外部 broker 依賴
+   - SQLite 測試 fixture 穩定化（`StaticPool`）
+   - Outbound queue 呼叫韌性強化（broker 不可用時 graceful degrade）
+   - Uploads 路由與 Supplier schema 型別一致性修正
+   - 多組測試 patch 策略統一（assert `.delay`）
+- **驗證結果**：`backend pytest` 全量通過：**241 passed, 2 skipped**
+
+---
+
 ## 📦 交付清單
 
 ### 第一部分：技術文件（2 份）
