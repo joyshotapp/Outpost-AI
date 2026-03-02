@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Allow: /suppliers/
+Allow: /suppliers/*
+
+# Protect private areas
+Disallow: /dashboard/
+Disallow: /rfq/new
+Disallow: /api/
+
+# Sitemap
+Sitemap: https://factoryinsider.com/sitemap.xml

@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "browse": "Explorar Proveedores",
+    "postRfq": "Publicar RFQ",
+    "dashboard": "Panel",
+    "messages": "Mensajes",
+    "login": "Iniciar sesión",
+    "signUp": "Registrarse"
+  },
+  "home": {
+    "heroTitle": "Encuentra Fabricantes Verificados en Todo el Mundo",
+    "heroSubtitle": "Busca en más de 12,000 proveedores verificados en 60 países. Recibe cotizaciones en menos de 24 horas.",
+    "searchPlaceholder": "Busca por producto, material, industria o empresa...",
+    "searchButton": "Buscar",
+    "browseByIndustry": "Explorar por industria",
+    "industrySubtitle": "Especialistas en todos los sectores de fabricación",
+    "statsSuppliers": "Proveedores Verificados",
+    "statsCountries": "Países",
+    "statsRfqs": "RFQs Procesadas",
+    "statsQuoteTime": "Tiempo Medio de Cotización",
+    "ctaTitle": "¿Listo para aprovisionar de forma más inteligente?",
+    "ctaSubtitle": "Publica tu RFQ y recibe ofertas competitivas de proveedores verificados en 24 horas.",
+    "ctaPostRfq": "Publicar RFQ",
+    "ctaExplore": "Explorar Proveedores"
+  },
+  "suppliers": {
+    "searchResultsCount": "{count} proveedores encontrados",
+    "demoData": "Datos demo",
+    "noResults": "No se encontraron proveedores",
+    "noResultsHint": "Intenta ajustar los filtros",
+    "allIndustries": "Todas las industrias",
+    "allCountries": "Todos los países",
+    "verifiedOnly": "Solo verificados",
+    "sortBestMatch": "Mejor coincidencia",
+    "sortMostViewed": "Más vistos",
+    "sortFastestDelivery": "Entrega más rápida",
+    "sortNewest": "Más nuevos",
+    "filterIndustry": "Industria",
+    "filterCountry": "País",
+    "filterCertification": "Certificación",
+    "filterVerification": "Verificación",
+    "verified": "Verificado",
+    "views": "vistas",
+    "daysLead": "días de plazo"
+  },
+  "supplier": {
+    "verifiedSupplier": "Proveedor Verificado",
+    "sendRfq": "Enviar RFQ",
+    "saveSupplier": "Guardar proveedor",
+    "saved": "Guardado",
+    "message": "Enviar mensaje",
+    "mainProducts": "Principales Productos y Servicios",
+    "certifications": "Certificaciones y Normas",
+    "manufacturingCapacity": "Capacidad de Fabricación",
+    "quickFacts": "Datos Rápidos",
+    "leadTime": "Plazo de entrega",
+    "employees": "Empleados",
+    "founded": "Fundada en",
+    "industry": "Industria",
+    "website": "Sitio web",
+    "days": "días",
+    "readyToSource": "¿Listo para aprovisionar?",
+    "quoteTime": "Envía un RFQ y recibe una cotización en 24 horas",
+    "createRfq": "Crear RFQ"
+  },
+  "dashboard": {
+    "title": "Panel del Comprador",
+    "subtitle": "Resumen de tu actividad de aprovisionamiento",
+    "totalRfqs": "Total RFQs",
+    "activeRfqs": "RFQs Activas",
+    "repliesReceived": "Respuestas Recibidas",
+    "savedSuppliers": "Proveedores Guardados",
+    "unreadMessages": "Mensajes No Leídos",
+    "myRfqs": "Mis RFQs",
+    "newRfq": "+ Nueva RFQ",
+    "status": "Estado",
+    "supplier": "Proveedor",
+    "grade": "Calificación",
+    "date": "Fecha"
+  },
+  "messages": {
+    "title": "Mensajes",
+    "conversations": "Conversaciones",
+    "typeMessage": "Escribe un mensaje...",
+    "send": "Enviar",
+    "viewProfile": "Ver perfil",
+    "sendRfq": "Enviar RFQ",
+    "active": "Activo",
+    "noConversations": "Sin conversaciones"
+  },
+  "rfq": {
+    "title": "Solicitud de Cotización",
+    "status": {
+      "draft": "Borrador",
+      "submitted": "Enviado",
+      "quoted": "Cotizado",
+      "accepted": "Aceptado",
+      "rejected": "Rechazado",
+      "closed": "Cerrado",
+      "active": "Activo"
+    }
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Algo salió mal",
+    "back": "Volver",
+    "view": "Ver",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "demo": "Demo"
+  }
+}

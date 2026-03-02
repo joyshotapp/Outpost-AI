@@ -20,6 +20,8 @@ from app.models.outbound_contact import OutboundContact
 from app.models.linkedin_sequence import LinkedInSequence
 from app.models.email_sequence import EmailSequence
 from app.models.unified_lead import UnifiedLead
+from app.models.saved_supplier import SavedSupplier
+from app.models.direct_message import DirectMessage
 
 __all__ = [
     "Base",
@@ -43,4 +45,7 @@ __all__ = [
     "ConversationMessage",
     "Notification",
     "HeyGenUsageRecord",
+    "SavedSupplier",
+    "DirectMessage",
 ]
+

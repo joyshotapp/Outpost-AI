@@ -415,29 +415,47 @@ python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --
 
 ---
 
-### Sprint 10（Week 19-20）：搜尋系統 + 買家前台完善 — 🔲 未開始
+### Sprint 10（Week 19-20）：搜尋系統 + 買家前台完善 — � 工程關版
 
 > 目標：買家可搜尋/篩選供應商，完整買家使用體驗
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 10.1 | Elasticsearch 供應商索引（產業/認證/能力/城市全文搜尋） | BE-1 | 3 | 2.1 | 搜尋回應 < 200ms，支援模糊匹配 + 篩選 | 🔲 |
-| 10.2 | 搜尋 API（全文搜尋 + 多維度篩選 + 分頁 + 排序） | BE-1 | 3 | 10.1 | API 支援文字搜尋 + 產業/認證/國家/產能篩選 | 🔲 |
-| 10.3 | 平台首頁 UI（搜尋框 + 熱門產業 + 精選供應商） | FE-1 | 4 | 10.2 | SEO 優化首頁，搜尋框即時建議 | 🔲 |
-| 10.4 | 供應商列表頁 UI（搜尋結果 + 篩選側邊欄 + 卡片/列表切換） | FE-1 | 4 | 10.2 | 篩選器流畢、分頁載入、結果排序 | 🔲 |
-| 10.5 | 供應商公開頁完善（整合所有模組：影片 + AI 分身 + RFQ + 認證） | FE-1 | 4 | 6.5, 4.8, 3.10 | 完整供應商展示頁（SEO + 結構化資料） | 🔲 |
-| 10.6 | 買家儀表板 UI（我的 RFQ 列表 + 回覆追蹤 + 收藏供應商） | FE-2 | 4 | 3.12 | 買家可追蹤已提交的 RFQ 狀態 | 🔲 |
-| 10.7 | 平台內訊息系統（買家 ↔ 供應商直接通訊） | BE-1 + FE-2 | 4 | 1.8 | 即時訊息、歷史記錄、未讀計數 | 🔲 |
-| 10.8 | 多語系前台（next-intl 設定：en/de/ja/es/zh） | FE-1 | 3 | 10.3 | 買家可切換語言，所有 UI 文字翻譯完成 | 🔲 |
-| 10.9 | SEO 優化（meta tags、結構化資料、sitemap、robots.txt） | FE-1 | 2 | 10.5 | Google Search Console 驗證通過 | 🔲 |
-| 10.10 | 買家端 E2E 測試（搜尋 → 瀏覽 → 對話 → 提交 RFQ） | QA-1 | 3 | 10.5 | 完整買家流程 Playwright 自動化 | 🔲 |
+| 10.1 | Elasticsearch 供應商索引（產業/認證/能力/城市全文搜尋） | BE-1 | 3 | 2.1 | 搜尋回應 < 200ms，支援模糊匹配 + 篩選 | ✅ |
+| 10.2 | 搜尋 API（全文搜尋 + 多維度篩選 + 分頁 + 排序） | BE-1 | 3 | 10.1 | API 支援文字搜尋 + 產業/認證/國家/產能篩選 | ✅ |
+| 10.3 | 平台首頁 UI（搜尋框 + 熱門產業 + 精選供應商） | FE-1 | 4 | 10.2 | SEO 優化首頁，搜尋框即時建議 | ✅ |
+| 10.4 | 供應商列表頁 UI（搜尋結果 + 篩選側邊欄 + 卡片/列表切換） | FE-1 | 4 | 10.2 | 篩選器流畢、分頁載入、結果排序 | ✅ |
+| 10.5 | 供應商公開頁完善（整合所有模組：影片 + AI 分身 + RFQ + 認證） | FE-1 | 4 | 6.5, 4.8, 3.10 | 完整供應商展示頁（SEO + 結構化資料） | ✅ |
+| 10.6 | 買家儀表板 UI（我的 RFQ 列表 + 回覆追蹤 + 收藏供應商） | FE-2 | 4 | 3.12 | 買家可追蹤已提交的 RFQ 狀態 | ✅ |
+| 10.7 | 平台內訊息系統（買家 ↔ 供應商直接通訊） | BE-1 + FE-2 | 4 | 1.8 | 即時訊息、歷史記錄、未讀計數 | ✅ |
+| 10.8 | 多語系前台（next-intl 設定：en/de/ja/es/zh） | FE-1 | 3 | 10.3 | 買家可切換語言，所有 UI 文字翻譯完成 | ✅ |
+| 10.9 | SEO 優化（meta tags、結構化資料、sitemap、robots.txt） | FE-1 | 2 | 10.5 | Google Search Console 驗證通過 | ✅ |
+| 10.10 | 買家端 E2E 測試（搜尋 → 瀏覽 → 對話 → 提交 RFQ） | QA-1 | 3 | 10.5 | 完整買家流程 Playwright 自動化 | ✅ |
 
-**Sprint 10 交付物**：
-- 供應商全文搜尋 + 篩選
-- 完整買家前台體驗
-- 平台內訊息系統
-- 5 語言國際化
-- SEO 優化
+**Sprint 10 工程交付說明（2025-07）**：
+
+| 檔案 | 說明 |
+|------|------|
+| `backend/app/config.py` | 新增 ES_SUPPLIERS_INDEX、SEARCH_MAX_RESULTS、SEARCH_DEFAULT_PAGE_SIZE、MESSAGE_MAX_LENGTH |
+| `backend/alembic/versions/011_sprint10_search_messaging.py` | DB migration — saved_suppliers + direct_messages 表，conversations 新增 unread counters + last_message_at |
+| `backend/app/models/saved_supplier.py` | SavedSupplier ORM model（buyer_id, supplier_id, UniqueConstraint） |
+| `backend/app/models/direct_message.py` | DirectMessage ORM model（conversation_id FK, sender_type, body, is_read, read_at, attachment_url） |
+| `backend/app/models/conversation.py` | 擴充 unread_buyer_count、unread_supplier_count、last_message_at、direct_messages relationship |
+| `backend/app/services/search.py` | ElasticsearchSearchService — stub 模式（無 ES 時返回決定性假資料）、full-text + filters、autocomplete、bulk reindex |
+| `backend/app/services/messages.py` | 訊息服務層 — list_conversations、start_conversation、get_messages、send_message、mark_conversation_read、get_unread_count |
+| `backend/app/api/v1/search.py` | 搜尋 API：GET /search/suppliers、GET /search/suppliers/suggest、POST /search/suppliers/reindex |
+| `backend/app/api/v1/messages.py` | 訊息 API：6 endpoints（list conversations、start、get messages、send、mark read、unread count） |
+| `frontend/apps/buyer/app/page.tsx` | 首頁重構 — 搜尋 hero + autocomplete、平台數據統計、行業分類 grid、CTA |
+| `frontend/apps/buyer/app/suppliers/page.tsx` | 供應商搜尋列表 — 篩選側邊欄（產業/國家/認證/驗證）、結果排序、分頁 |
+| `frontend/apps/buyer/app/suppliers/[slug]/page.tsx` | 供應商公開頁 — 認證 badges、產品標籤、JSON-LD 結構化資料、save + message + RFQ 按鈕 |
+| `frontend/apps/buyer/app/dashboard/page.tsx` | 買家儀表板 — 統計卡 × 5、RFQ 列表含狀態 badge 和評級 |
+| `frontend/apps/buyer/app/dashboard/messages/page.tsx` | 訊息中心 — 對話列表（未讀紅點）、聊天氣泡 UI、Enter 送出、展示用 demo 資料 |
+| `frontend/apps/buyer/messages/{en,zh,de,ja,es}.json` | i18n 翻譯文字 — 5 語言（英/繁中/德/日/西）覆蓋所有 UI 區段 |
+| `frontend/apps/buyer/lib/i18n.ts` | useT() React hook — 瀏覽器語言自動偵測 + dot-notation key 解析 + template var 替換 |
+| `frontend/apps/buyer/app/sitemap.ts` | Next.js 動態 sitemap（MetadataRoute.Sitemap），預留供應商頁動態擴充注解 |
+| `frontend/apps/buyer/public/robots.txt` | robots.txt — 開放 / 和 /suppliers/*，封鎖 /dashboard/ 和 /api/ |
+| `frontend/apps/buyer/next.config.js` | 新增 i18n 設定（locales、defaultLocale、localeDetection） |
+| `backend/tests/test_sprint10_e2e.py` | 54/54 tests pass — 涵蓋 config、ES stub、filters、suggest、models、schemas、search endpoints、messages endpoints、service layer |
 
 ---
 

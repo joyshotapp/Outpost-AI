@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "browse": "サプライヤーを探す",
+    "postRfq": "見積依頼",
+    "dashboard": "ダッシュボード",
+    "messages": "メッセージ",
+    "login": "ログイン",
+    "signUp": "無料登録"
+  },
+  "home": {
+    "heroTitle": "世界中の認証済みメーカーを見つける",
+    "heroSubtitle": "60か国以上の12,000社以上の審査済みサプライヤーを検索。24時間以内に見積もりを入手。",
+    "searchPlaceholder": "製品、素材、業種、または会社名で検索...",
+    "searchButton": "検索",
+    "browseByIndustry": "業種で探す",
+    "industrySubtitle": "あらゆる製造分野の専門サプライヤー",
+    "statsSuppliers": "認証済みサプライヤー",
+    "statsCountries": "対応国",
+    "statsRfqs": "処理済み見積依頼",
+    "statsQuoteTime": "平均見積時間",
+    "ctaTitle": "スマートな調達を始めませんか？",
+    "ctaSubtitle": "RFQを投稿して、24時間以内に認証済みサプライヤーから競合見積もりを受け取りましょう。",
+    "ctaPostRfq": "RFQを投稿",
+    "ctaExplore": "サプライヤーを探す"
+  },
+  "suppliers": {
+    "searchResultsCount": "{count}社が見つかりました",
+    "demoData": "デモデータ",
+    "noResults": "サプライヤーが見つかりません",
+    "noResultsHint": "フィルターを調整してください",
+    "allIndustries": "すべての業種",
+    "allCountries": "すべての国",
+    "verifiedOnly": "認証済みのみ",
+    "sortBestMatch": "ベストマッチ",
+    "sortMostViewed": "閲覧数順",
+    "sortFastestDelivery": "納期順",
+    "sortNewest": "新着順",
+    "filterIndustry": "業種",
+    "filterCountry": "国",
+    "filterCertification": "認証",
+    "filterVerification": "認証状況",
+    "verified": "認証済み",
+    "views": "閲覧",
+    "daysLead": "日 リードタイム"
+  },
+  "supplier": {
+    "verifiedSupplier": "認証済みサプライヤー",
+    "sendRfq": "RFQを送る",
+    "saveSupplier": "保存",
+    "saved": "保存済み",
+    "message": "メッセージ",
+    "mainProducts": "主要製品・サービス",
+    "certifications": "認証・規格",
+    "manufacturingCapacity": "製造キャパシティ",
+    "quickFacts": "基本情報",
+    "leadTime": "リードタイム",
+    "employees": "従業員数",
+    "founded": "設立年",
+    "industry": "業種",
+    "website": "ウェブサイト",
+    "days": "日",
+    "readyToSource": "調達の準備はできましたか？",
+    "quoteTime": "RFQを送信して24時間以内に見積もりを受け取る",
+    "createRfq": "RFQを作成"
+  },
+  "dashboard": {
+    "title": "バイヤーダッシュボード",
+    "subtitle": "調達活動の概要",
+    "totalRfqs": "総見積依頼数",
+    "activeRfqs": "進行中",
+    "repliesReceived": "回答受取数",
+    "savedSuppliers": "保存済みサプライヤー",
+    "unreadMessages": "未読メッセージ",
+    "myRfqs": "自分のRFQ",
+    "newRfq": "+ 新規RFQ",
+    "status": "ステータス",
+    "supplier": "サプライヤー",
+    "grade": "評価",
+    "date": "日付"
+  },
+  "messages": {
+    "title": "メッセージ",
+    "conversations": "会話一覧",
+    "typeMessage": "メッセージを入力...",
+    "send": "送信",
+    "viewProfile": "プロフィールを見る",
+    "sendRfq": "RFQを送る",
+    "active": "アクティブ",
+    "noConversations": "会話がありません"
+  },
+  "rfq": {
+    "title": "見積依頼",
+    "status": {
+      "draft": "下書き",
+      "submitted": "送信済み",
+      "quoted": "見積済み",
+      "accepted": "承認済み",
+      "rejected": "却下",
+      "closed": "終了",
+      "active": "進行中"
+    }
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "back": "戻る",
+    "view": "表示",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "confirm": "確認",
+    "demo": "デモ"
+  }
+}

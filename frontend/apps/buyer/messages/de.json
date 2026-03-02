@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "browse": "Lieferanten durchsuchen",
+    "postRfq": "Anfrage stellen",
+    "dashboard": "Dashboard",
+    "messages": "Nachrichten",
+    "login": "Anmelden",
+    "signUp": "Registrieren"
+  },
+  "home": {
+    "heroTitle": "Weltweit verifizierte Hersteller finden",
+    "heroSubtitle": "Durchsuchen Sie über 12.000 geprüfte Lieferanten aus 60 Ländern. Angebote in unter 24 Stunden.",
+    "searchPlaceholder": "Nach Produkt, Material, Branche oder Unternehmen suchen...",
+    "searchButton": "Suchen",
+    "browseByIndustry": "Nach Branche durchsuchen",
+    "industrySubtitle": "Spezialisten aus allen Fertigungsbereichen",
+    "statsSuppliers": "Verifizierte Lieferanten",
+    "statsCountries": "Länder",
+    "statsRfqs": "Bearbeitete Anfragen",
+    "statsQuoteTime": "Ø Angebotszeit",
+    "ctaTitle": "Smarter beschaffen?",
+    "ctaSubtitle": "Stellen Sie Ihre Anfrage und erhalten Sie Angebote von verifizierten Lieferanten innerhalb von 24 Stunden.",
+    "ctaPostRfq": "Anfrage stellen",
+    "ctaExplore": "Lieferanten erkunden"
+  },
+  "suppliers": {
+    "searchResultsCount": "{count} Lieferanten gefunden",
+    "demoData": "Demo-Daten",
+    "noResults": "Keine Lieferanten gefunden",
+    "noResultsHint": "Passen Sie Ihre Filter an",
+    "allIndustries": "Alle Branchen",
+    "allCountries": "Alle Länder",
+    "verifiedOnly": "Nur verifiziert",
+    "sortBestMatch": "Beste Übereinstimmung",
+    "sortMostViewed": "Meistgesehen",
+    "sortFastestDelivery": "Schnellste Lieferung",
+    "sortNewest": "Neueste",
+    "filterIndustry": "Branche",
+    "filterCountry": "Land",
+    "filterCertification": "Zertifizierung",
+    "filterVerification": "Verifizierung",
+    "verified": "Verifiziert",
+    "views": "Aufrufe",
+    "daysLead": "Tage Lieferzeit"
+  },
+  "supplier": {
+    "verifiedSupplier": "Verifizierter Lieferant",
+    "sendRfq": "Anfrage senden",
+    "saveSupplier": "Lieferant speichern",
+    "saved": "Gespeichert",
+    "message": "Nachricht senden",
+    "mainProducts": "Hauptprodukte & Dienstleistungen",
+    "certifications": "Zertifizierungen & Standards",
+    "manufacturingCapacity": "Fertigungskapazität",
+    "quickFacts": "Kurzinfos",
+    "leadTime": "Lieferzeit",
+    "employees": "Mitarbeiter",
+    "founded": "Gegründet",
+    "industry": "Branche",
+    "website": "Website",
+    "days": "Tage",
+    "readyToSource": "Bereit zur Beschaffung?",
+    "quoteTime": "Anfrage senden und Angebot in 24 Stunden erhalten",
+    "createRfq": "Anfrage erstellen"
+  },
+  "dashboard": {
+    "title": "Einkäufer-Dashboard",
+    "subtitle": "Ihre Beschaffungsaktivitäten im Überblick",
+    "totalRfqs": "Anfragen gesamt",
+    "activeRfqs": "Aktive Anfragen",
+    "repliesReceived": "Antworten erhalten",
+    "savedSuppliers": "Gespeicherte Lieferanten",
+    "unreadMessages": "Ungelesene Nachrichten",
+    "myRfqs": "Meine Anfragen",
+    "newRfq": "+ Neue Anfrage",
+    "status": "Status",
+    "supplier": "Lieferant",
+    "grade": "Bewertung",
+    "date": "Datum"
+  },
+  "messages": {
+    "title": "Nachrichten",
+    "conversations": "Gespräche",
+    "typeMessage": "Nachricht schreiben...",
+    "send": "Senden",
+    "viewProfile": "Profil ansehen",
+    "sendRfq": "Anfrage senden",
+    "active": "Aktiv",
+    "noConversations": "Noch keine Gespräche"
+  },
+  "rfq": {
+    "title": "Angebotsanfrage",
+    "status": {
+      "draft": "Entwurf",
+      "submitted": "Eingereicht",
+      "quoted": "Angeboten",
+      "accepted": "Akzeptiert",
+      "rejected": "Abgelehnt",
+      "closed": "Geschlossen",
+      "active": "Aktiv"
+    }
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Ein Fehler ist aufgetreten",
+    "back": "Zurück",
+    "view": "Ansehen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "demo": "Demo"
+  }
+}

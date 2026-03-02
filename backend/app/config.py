@@ -137,6 +137,14 @@ class Settings(BaseSettings):
         "in today's fast-paced,it's important to note,it's worth noting",
     )
 
+    # Elasticsearch (Sprint 10 — 10.1: supplier full-text search)
+    ES_SUPPLIERS_INDEX: str = os.getenv("ES_SUPPLIERS_INDEX", "suppliers")
+    SEARCH_MAX_RESULTS: int = int(os.getenv("SEARCH_MAX_RESULTS", "100"))
+    SEARCH_DEFAULT_PAGE_SIZE: int = int(os.getenv("SEARCH_DEFAULT_PAGE_SIZE", "20"))
+
+    # Direct messaging (Sprint 10 — 10.7)
+    MESSAGE_MAX_LENGTH: int = int(os.getenv("MESSAGE_MAX_LENGTH", "5000"))
+
     # Celery
     CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL", REDIS_URL)
     CELERY_RESULT_BACKEND: str = os.getenv(

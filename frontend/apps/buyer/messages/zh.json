@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "browse": "供應商瀏覽",
+    "postRfq": "發佈詢價",
+    "dashboard": "採購中心",
+    "messages": "訊息",
+    "login": "登入",
+    "signUp": "免費註冊"
+  },
+  "home": {
+    "heroTitle": "全球認證製造商一鍵找到",
+    "heroSubtitle": "搜尋超過 12,000 家通過審核的供應商，遍佈 60 個國家，24 小時內收到報價。",
+    "searchPlaceholder": "搜尋產品、材料、行業或公司名稱...",
+    "searchButton": "搜尋",
+    "browseByIndustry": "依行業瀏覽",
+    "industrySubtitle": "涵蓋所有製造業領域的專業供應商",
+    "statsSuppliers": "認證供應商",
+    "statsCountries": "覆蓋國家",
+    "statsRfqs": "已處理詢價",
+    "statsQuoteTime": "平均報價時間",
+    "ctaTitle": "準備開始智慧採購？",
+    "ctaSubtitle": "發佈您的 RFQ，24 小時內從認證供應商獲得競爭性報價。",
+    "ctaPostRfq": "發佈 RFQ",
+    "ctaExplore": "探索供應商"
+  },
+  "suppliers": {
+    "searchResultsCount": "找到 {count} 家供應商",
+    "demoData": "示範資料",
+    "noResults": "未找到供應商",
+    "noResultsHint": "請嘗試調整篩選條件",
+    "allIndustries": "所有行業",
+    "allCountries": "所有國家",
+    "verifiedOnly": "僅顯示認證",
+    "sortBestMatch": "最佳匹配",
+    "sortMostViewed": "最多瀏覽",
+    "sortFastestDelivery": "最快交貨",
+    "sortNewest": "最新",
+    "filterIndustry": "行業",
+    "filterCountry": "國家",
+    "filterCertification": "認證",
+    "filterVerification": "驗證",
+    "verified": "已認證",
+    "views": "次瀏覽",
+    "daysLead": "天交期"
+  },
+  "supplier": {
+    "verifiedSupplier": "認證供應商",
+    "sendRfq": "發送 RFQ",
+    "saveSupplier": "收藏供應商",
+    "saved": "已收藏",
+    "message": "傳送訊息",
+    "mainProducts": "主要產品與服務",
+    "certifications": "認證與標準",
+    "manufacturingCapacity": "生產能力",
+    "quickFacts": "快速資訊",
+    "leadTime": "交貨期",
+    "employees": "員工人數",
+    "founded": "成立年份",
+    "industry": "行業",
+    "website": "網站",
+    "days": "天",
+    "readyToSource": "準備採購？",
+    "quoteTime": "發送 RFQ，24 小時內獲得報價",
+    "createRfq": "建立 RFQ"
+  },
+  "dashboard": {
+    "title": "採購中心",
+    "subtitle": "您的採購活動一覽",
+    "totalRfqs": "總詢價數",
+    "activeRfqs": "進行中",
+    "repliesReceived": "收到回覆",
+    "savedSuppliers": "已收藏供應商",
+    "unreadMessages": "未讀訊息",
+    "myRfqs": "我的詢價",
+    "newRfq": "+ 新增詢價",
+    "status": "狀態",
+    "supplier": "供應商",
+    "grade": "評級",
+    "date": "日期"
+  },
+  "messages": {
+    "title": "訊息中心",
+    "conversations": "對話列表",
+    "typeMessage": "輸入訊息...",
+    "send": "傳送",
+    "viewProfile": "查看簡介",
+    "sendRfq": "發送 RFQ",
+    "active": "活躍",
+    "noConversations": "尚無對話"
+  },
+  "rfq": {
+    "title": "詢價單",
+    "status": {
+      "draft": "草稿",
+      "submitted": "已提交",
+      "quoted": "已報價",
+      "accepted": "已接受",
+      "rejected": "已拒絕",
+      "closed": "已結束",
+      "active": "進行中"
+    }
+  },
+  "common": {
+    "loading": "載入中...",
+    "error": "發生錯誤",
+    "back": "返回",
+    "view": "查看",
+    "save": "儲存",
+    "cancel": "取消",
+    "confirm": "確認",
+    "demo": "示範"
+  }
+}

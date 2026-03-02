@@ -14,6 +14,8 @@ from app.api.v1.uploads import router as uploads_router
 from app.api.v1.visitor_intent import router as visitor_intent_router
 from app.api.v1.videos import router as videos_router
 from app.api.v1.webhooks import router as webhooks_router
+from app.api.v1.search import router as search_router
+from app.api.v1.messages import router as messages_router
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
@@ -30,6 +32,8 @@ router.include_router(uploads_router)
 router.include_router(visitor_intent_router)
 router.include_router(videos_router)
 router.include_router(webhooks_router)
+router.include_router(search_router)
+router.include_router(messages_router)
 
 
 @router.get("/health")

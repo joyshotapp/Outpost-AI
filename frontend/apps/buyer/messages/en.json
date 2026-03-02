@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "browse": "Browse Suppliers",
+    "postRfq": "Post RFQ",
+    "dashboard": "Dashboard",
+    "messages": "Messages",
+    "login": "Login",
+    "signUp": "Sign Up"
+  },
+  "home": {
+    "heroTitle": "Find Verified Manufacturers Worldwide",
+    "heroSubtitle": "Search 12,000+ pre-screened suppliers across 60 countries. Get quotes in under 24 hours.",
+    "searchPlaceholder": "Search by product, material, industry, or company...",
+    "searchButton": "Search",
+    "browseByIndustry": "Browse by Industry",
+    "industrySubtitle": "Specialists across every manufacturing sector",
+    "statsSuppliers": "Verified Suppliers",
+    "statsCountries": "Countries",
+    "statsRfqs": "RFQs Processed",
+    "statsQuoteTime": "Avg. Quote Time",
+    "ctaTitle": "Ready to Source Smarter?",
+    "ctaSubtitle": "Post your RFQ and receive competitive bids from verified suppliers within 24 hours.",
+    "ctaPostRfq": "Post an RFQ",
+    "ctaExplore": "Explore Suppliers"
+  },
+  "suppliers": {
+    "searchResultsCount": "{count} suppliers found",
+    "demoData": "Demo data",
+    "noResults": "No suppliers found",
+    "noResultsHint": "Try adjusting your filters",
+    "allIndustries": "All Industries",
+    "allCountries": "All Countries",
+    "verifiedOnly": "Verified only",
+    "sortBestMatch": "Best Match",
+    "sortMostViewed": "Most Viewed",
+    "sortFastestDelivery": "Fastest Delivery",
+    "sortNewest": "Newest",
+    "filterIndustry": "Industry",
+    "filterCountry": "Country",
+    "filterCertification": "Certification",
+    "filterVerification": "Verification",
+    "verified": "Verified",
+    "views": "views",
+    "daysLead": "days lead"
+  },
+  "supplier": {
+    "verifiedSupplier": "Verified Supplier",
+    "sendRfq": "Send RFQ",
+    "saveSupplier": "Save Supplier",
+    "saved": "Saved",
+    "message": "Message",
+    "mainProducts": "Main Products & Services",
+    "certifications": "Certifications & Standards",
+    "manufacturingCapacity": "Manufacturing Capacity",
+    "quickFacts": "Quick Facts",
+    "leadTime": "Lead Time",
+    "employees": "Employees",
+    "founded": "Founded",
+    "industry": "Industry",
+    "website": "Website",
+    "days": "days",
+    "readyToSource": "Ready to source?",
+    "quoteTime": "Send an RFQ and get a quote within 24 hours",
+    "createRfq": "Create RFQ"
+  },
+  "dashboard": {
+    "title": "Buyer Dashboard",
+    "subtitle": "Your sourcing activity at a glance",
+    "totalRfqs": "Total RFQs",
+    "activeRfqs": "Active RFQs",
+    "repliesReceived": "Replies Received",
+    "savedSuppliers": "Saved Suppliers",
+    "unreadMessages": "Unread Messages",
+    "myRfqs": "My RFQs",
+    "newRfq": "+ New RFQ",
+    "status": "Status",
+    "supplier": "Supplier",
+    "grade": "Grade",
+    "date": "Date"
+  },
+  "messages": {
+    "title": "Messages",
+    "conversations": "Conversations",
+    "typeMessage": "Type a message...",
+    "send": "Send",
+    "viewProfile": "View Profile",
+    "sendRfq": "Send RFQ",
+    "active": "Active",
+    "noConversations": "No conversations yet"
+  },
+  "rfq": {
+    "title": "Request for Quotation",
+    "status": {
+      "draft": "Draft",
+      "submitted": "Submitted",
+      "quoted": "Quoted",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "closed": "Closed",
+      "active": "Active"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "back": "Back",
+    "view": "View",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "demo": "Demo"
+  }
+}

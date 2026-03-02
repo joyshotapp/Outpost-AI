@@ -2,6 +2,12 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  // Locale detection — no prefix routing in MVP; client-side via lib/i18n.ts
+  i18n: {
+    locales: ['en', 'zh', 'de', 'ja', 'es'],
+    defaultLocale: 'en',
+    localeDetection: true,
+  },
   images: {
     unoptimized: false,
     remotePatterns: [
