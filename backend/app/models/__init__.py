@@ -18,6 +18,8 @@ from app.models.notification import Notification
 from app.models.heygen_usage import HeyGenUsageRecord
 from app.models.outbound_contact import OutboundContact
 from app.models.linkedin_sequence import LinkedInSequence
+from app.models.email_sequence import EmailSequence
+from app.models.unified_lead import UnifiedLead
 
 __all__ = [
     "Base",
@@ -33,6 +35,8 @@ __all__ = [
     "OutboundCampaign",
     "OutboundContact",
     "LinkedInSequence",
+    "EmailSequence",
+    "UnifiedLead",
     "ContentItem",
     "Conversation",
     "KnowledgeDocument",

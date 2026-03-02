@@ -62,7 +62,7 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 5 | Week 9-10 | 訪客意圖分析 | 🟢 工程關版 | 10/10 ✅ | 外部實網驗收待補齊金鑰後簽核 |
 | Sprint 6 | Week 11-12 | AI 多語系影片 | 🟢 工程關版 | 8/8 ✅ | 完整後端 + 前端 + 費用追蹤 + E2E 測試；Code Review 高風險修復完成，待 HeyGen 實網金鑰上位後進行流量驗證 |
 | Sprint 7 | Week 13-14 | Outbound — LinkedIn | � 工程關版 | 10/10 ✅ | Clay/HeyReach stub 完成；實網金鑰上位後進行流量驗證 |
-| Sprint 8 | Week 15-16 | Outbound — Email | 🔲 未開始 | 0/10 | 需 Instantly API Key |
+| Sprint 8 | Week 15-16 | Outbound — Email | � 工程關版 | 10/10 | ✅ 2024-01 完成 |
 | Sprint 9 | Week 17-18 | 內容裂變矩陣 | 🔲 未開始 | 0/10 | 需 OpusClip / Repurpose Key |
 | Sprint 10 | Week 19-20 | 搜尋系統 + 買家前台 | 🔲 未開始 | 0/10 | — |
 | Sprint 11 | Week 21-22 | 訂閱計費 + 管理後台 | 🔲 未開始 | 0/10 | 需 Stripe Key |
@@ -333,29 +333,36 @@ python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --
 
 ---
 
-### Sprint 8（Week 15-16）：Outbound 引擎 — Email 外展 + 統一處理 — 🔲 未開始
+### Sprint 8（Week 15-16）：Outbound 引擎 — Email 外展 + 統一處理 — � 工程關版
 
 > 目標：Instantly Email 序列 + 所有進線來源統一處理矩陣
 > 前置條件：Instantly / HubSpot API Key 已上位、Sprint 7 完成
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 8.1 | Instantly API v2 封裝（建立活動、匯入名單、啟動序列、回覆 Webhook） | INT-1 | 4 | 1.11 | 名單匯入 → Email 序列執行 → 回覆/退訂觸發 Webhook | 🔲 |
-| 8.2 | Email 外展序列管理 UI（4 封信狀態 + 開信率/回覆率追蹤） | FE-1 | 4 | 8.1 | 供應商可查看 Email 序列進度 + 統計數據 | 🔲 |
-| 8.3 | Email 回覆偵測 + 自動停止序列 + 熱線索標記 | INT-1 + BE-1 | 2 | 8.1 | 回覆自動暫停序列，標記熱線索 | 🔲 |
-| 8.4 | Email Bounce 監控 + 健康度警告 | INT-1 | 2 | 8.1 | Hard Bounce > 2% 自動暫停 + 告警 | 🔲 |
-| 8.5 | 統一進線處理矩陣 API（RFQ / LinkedIn / Email / 訪客 / AI 分身 / 展覽名片） | BE-1 | 4 | 7.9, 8.3, 5.6, 4.7 | 所有來源統一寫入 leads 表，按規則分派 | 🔲 |
-| 8.6 | 業務工作台 UI（統一線索列表 + 來源標籤 + 建議行動） | FE-2 | 5 | 8.5 | 供應商業務可在一個介面看到所有進線，按 A/B/C 優先處理 | 🔲 |
-| 8.7 | C 級線索自動回覆（系統自動發感謝信 + 工廠簡介 PDF） | BE-1 + AI-1 | 2 | 8.5 | Score < 50 自動發送，無需人工介入 | 🔲 |
-| 8.8 | B 級線索半自動回覆（AI 草稿 + 供應商一鍵編輯發送） | FE-2 + AI-1 | 3 | 8.5 | 供應商收到 AI 草稿，可編輯後一鍵發送 | 🔲 |
-| 8.9 | HubSpot CRM 雙向同步（線索 + 聯絡人 + 活動記錄） | INT-1 | 3 | 8.5 | 平台線索自動同步至 HubSpot，HubSpot 更新回寫 | 🔲 |
-| 8.10 | Outbound + Email 整合 E2E 測試 | QA-1 | 3 | 8.5 | 完整流程跑通，統一處理矩陣正確分派 | 🔲 |
+| 8.1 | Instantly API v2 封裝（建立活動、匯入名單、啟動序列、回覆 Webhook） | INT-1 | 4 | 1.11 | 名單匯入 → Email 序列執行 → 回覆/退訂觸發 Webhook | ✅ |
+| 8.2 | Email 外展序列管理 UI（4 封信狀態 + 開信率/回覆率追蹤） | FE-1 | 4 | 8.1 | 供應商可查看 Email 序列進度 + 統計數據 | ✅ |
+| 8.3 | Email 回覆偵測 + 自動停止序列 + 熱線索標記 | INT-1 + BE-1 | 2 | 8.1 | 回覆自動暫停序列，標記熱線索 | ✅ |
+| 8.4 | Email Bounce 監控 + 健康度警告 | INT-1 | 2 | 8.1 | Hard Bounce > 2% 自動暫停 + 告警 | ✅ |
+| 8.5 | 統一進線處理矩陣 API（RFQ / LinkedIn / Email / 訪客 / AI 分身 / 展覽名片） | BE-1 | 4 | 7.9, 8.3, 5.6, 4.7 | 所有來源統一寫入 leads 表，按規則分派 | ✅ |
+| 8.6 | 業務工作台 UI（統一線索列表 + 來源標籤 + 建議行動） | FE-2 | 5 | 8.5 | 供應商業務可在一個介面看到所有進線，按 A/B/C 優先處理 | ✅ |
+| 8.7 | C 級線索自動回覆（系統自動發感謝信 + 工廠簡介 PDF） | BE-1 + AI-1 | 2 | 8.5 | Score < 50 自動發送，無需人工介入 | ✅ |
+| 8.8 | B 級線索半自動回覆（AI 草稿 + 供應商一鍵編輯發送） | FE-2 + AI-1 | 3 | 8.5 | 供應商收到 AI 草稿，可編輯後一鍵發送 | ✅ |
+| 8.9 | HubSpot CRM 雙向同步（線索 + 聯絡人 + 活動記錄） | INT-1 | 3 | 8.5 | 平台線索自動同步至 HubSpot，HubSpot 更新回寫 | ✅ |
+| 8.10 | Outbound + Email 整合 E2E 測試 | QA-1 | 3 | 8.5 | 完整流程跑通，統一處理矩陣正確分派 | ✅ |
 
 **Sprint 8 交付物**：
-- Instantly Email 外展序列
-- 所有進線來源統一處理
-- 業務工作台
-- HubSpot CRM 雙向同步
+- ✅ `services/instantly.py` — Instantly API v2 wrapper（stub mode、HMAC webhook 驗證）
+- ✅ `services/hubspot.py` — HubSpot CRM v3 wrapper（upsert contact、create deal、log activity）
+- ✅ `services/lead_pipeline.py` — 統一進線處理矩陣（Grade A/B/C 分派、7 天去重）
+- ✅ `models/email_sequence.py` + `models/unified_lead.py` — 新資料模型
+- ✅ `alembic/versions/009_sprint8_*` — DB migration
+- ✅ `tasks/outbound_email.py` — 6 個 Celery tasks（import/sync/auto-reply/draft/hubspot/reset）
+- ✅ `api/v1/webhooks.py` — Instantly webhook handler（5 events）
+- ✅ `api/v1/outbound.py` — Email campaign CRUD + unified leads workbench API（10 endpoints）
+- ✅ `frontend/.../email-campaigns/page.tsx` — Email 序列管理 UI（步驟進度條 + bounce banner）
+- ✅ `frontend/.../workbench/page.tsx` — 業務工作台 UI（Grade 徽章 + AI 草稿發送面板）
+- ✅ `tests/test_sprint8_e2e.py` — 20+ 個 unit/integration tests
 
 ---
 

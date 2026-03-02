@@ -101,6 +101,19 @@ class Settings(BaseSettings):
     # CDN (CloudFront) — if set, get_cdn_url() returns CloudFront URLs instead of S3 URLs
     CLOUDFRONT_DOMAIN: Optional[str] = os.getenv("CLOUDFRONT_DOMAIN")  # e.g. "d1234abcd.cloudfront.net"
 
+    # Instantly (Email outreach — Sprint 8)
+    INSTANTLY_API_KEY: Optional[str] = os.getenv("INSTANTLY_API_KEY")
+    INSTANTLY_API_BASE_URL: str = os.getenv("INSTANTLY_API_BASE_URL", "https://api.instantly.ai/api/v2")
+    INSTANTLY_WEBHOOK_SECRET: Optional[str] = os.getenv("INSTANTLY_WEBHOOK_SECRET")
+    # Email safety limits
+    EMAIL_DAILY_SEND_LIMIT: int = int(os.getenv("EMAIL_DAILY_SEND_LIMIT", "50"))
+    EMAIL_BOUNCE_RATE_THRESHOLD: float = float(os.getenv("EMAIL_BOUNCE_RATE_THRESHOLD", "0.02"))  # 2%
+
+    # HubSpot CRM (Sprint 8 — 8.9)
+    HUBSPOT_PRIVATE_APP_TOKEN: Optional[str] = os.getenv("HUBSPOT_PRIVATE_APP_TOKEN")
+    HUBSPOT_PIPELINE_ID: Optional[str] = os.getenv("HUBSPOT_PIPELINE_ID")
+    HUBSPOT_PORTAL_ID: Optional[str] = os.getenv("HUBSPOT_PORTAL_ID")
+
     # Celery
     CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL", REDIS_URL)
     CELERY_RESULT_BACKEND: str = os.getenv(

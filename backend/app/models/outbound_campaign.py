@@ -1,6 +1,6 @@
 """Outbound campaign model"""
 
-from sqlalchemy import Column, Integer, String, Text
+from sqlalchemy import Boolean, Column, Float, Integer, String, Text
 
 from app.models.base import BaseModel
 
@@ -23,13 +23,23 @@ class OutboundCampaign(BaseModel):
     icp_criteria = Column(Text, nullable=True)
 
     # ── Clay integration ────────────────────────────────────────────────────
-    clay_table_id = Column(String(100), nullable=True)          # Clay table ID for enrichment
+    clay_table_id = Column(String(100), nullable=True)
     clay_enrichment_status = Column(
         String(50), default="pending", nullable=False
     )  # pending | running | completed | failed
 
-    # ── HeyReach integration ────────────────────────────────────────────────
+    # ── HeyReach integration (LinkedIn) ─────────────────────────────────────
     heyreach_campaign_id = Column(String(100), nullable=True, index=True)
+
+    # ── Instantly integration (Email — Sprint 8) ─────────────────────────────
+    instantly_campaign_id = Column(String(100), nullable=True, index=True)
+    email_sent_count = Column(Integer, default=0, nullable=False)
+    email_opened_count = Column(Integer, default=0, nullable=False)
+    email_reply_count = Column(Integer, default=0, nullable=False)
+    email_bounce_count = Column(Integer, default=0, nullable=False)
+    email_unsubscribed_count = Column(Integer, default=0, nullable=False)
+    bounce_rate = Column(Float, default=0.0, nullable=False)  # 0.0–1.0
+    email_safety_paused = Column(Boolean, default=False, nullable=False)
 
     # ── Target & performance counters ───────────────────────────────────────
     target_count = Column(Integer, default=0, nullable=False)

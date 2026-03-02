@@ -1,7 +1,8 @@
-"""Webhook endpoints — Sprint 7 (7.9).
+"""Webhook endpoints — Sprint 7 (7.9) + Sprint 8 (8.3).
 
 Supported webhooks:
   POST /webhooks/heyreach   — HeyReach LinkedIn event callbacks
+  POST /webhooks/instantly  — Instantly Email event callbacks (Sprint 8)
 
 HeyReach event types handled:
   lead_replied          → mark hot lead, Slack alert, in-app notification
@@ -9,6 +10,13 @@ HeyReach event types handled:
   connection_declined   → mark sequence as declined
   message_opened        → update sequence day progress
   sequence_completed    → mark sequence as completed (no reply)
+
+Instantly event types handled:
+  email_replied         → mark hot lead, Slack alert, pause sequence
+  email_bounced         → mark bounce, update bounce_type
+  email_unsubscribed    → mark unsubscribed, stop sequence
+  email_opened          → increment open counter
+  email_sent            → increment sent counter
 """
 
 import hashlib
@@ -25,6 +33,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.database import get_db
 from app.models.linkedin_sequence import LinkedInSequence
+from app.models.email_sequence import EmailSequence
 from app.models.notification import Notification
 from app.models.outbound_campaign import OutboundCampaign
 from app.models.outbound_contact import OutboundContact
@@ -347,3 +356,275 @@ async def _push_hot_lead_to_slack(
                 )
     except Exception as exc:
         logger.warning("Slack hot lead notification failed: %s", exc)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sprint 8 — Instantly Email Webhook (Task 8.3)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.post("/instantly", status_code=status.HTTP_200_OK)
+async def instantly_webhook(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Receive Instantly email sequence events.
+
+    Expected payload:
+    {
+        "event_type": "email_replied",
+        "campaign_id": "inst_campaign_abc",
+        "lead_email": "john@acme.com",
+        "data": {"reply_content": "...", "step": 2}
+    }
+    """
+    raw_body = await request.body()
+    sig_header = request.headers.get("X-Instantly-Signature")
+
+    from app.services.instantly import InstantlyService
+    if not InstantlyService.verify_webhook_signature(raw_body, sig_header):
+        logger.warning("Instantly webhook signature verification failed")
+        raise HTTPException(status_code=401, detail="Invalid webhook signature")
+
+    try:
+        payload: dict[str, Any] = json.loads(raw_body)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid JSON: {exc}")
+
+    event_type: str = payload.get("event_type", "")
+    inst_campaign_id: str = payload.get("campaign_id", "")
+    lead_email: str = payload.get("lead_email", "")
+    data: dict[str, Any] = payload.get("data", {})
+
+    logger.info(
+        "Instantly webhook: event=%s campaign=%s email=%s",
+        event_type, inst_campaign_id, lead_email,
+    )
+
+    handler = {
+        "email_replied": _instantly_handle_replied,
+        "email_bounced": _instantly_handle_bounced,
+        "email_unsubscribed": _instantly_handle_unsubscribed,
+        "email_opened": _instantly_handle_opened,
+        "email_sent": _instantly_handle_sent,
+    }.get(event_type)
+
+    if handler:
+        await handler(db, inst_campaign_id, lead_email, data)
+    else:
+        logger.info("Instantly webhook: unhandled event '%s'", event_type)
+
+    return {"received": True, "event_type": event_type}
+
+
+async def _get_email_seq(
+    db: AsyncSession, inst_campaign_id: str, email: str
+) -> EmailSequence | None:
+    """Look up EmailSequence by Instantly campaign + email."""
+    result = await db.execute(
+        select(EmailSequence).where(
+            EmailSequence.instantly_campaign_id == inst_campaign_id,
+            EmailSequence.email == email,
+        )
+    )
+    return result.scalar_one_or_none()
+
+
+async def _instantly_handle_replied(
+    db: AsyncSession,
+    inst_campaign_id: str,
+    email: str,
+    data: dict[str, Any],
+) -> None:
+    """Email reply received — mark hot lead, trigger Slack, create notification."""
+    seq = await _get_email_seq(db, inst_campaign_id, email)
+    reply_content: str = data.get("reply_content", "")
+    step: int = data.get("step", 0)
+    now_iso = _ISO_NOW()
+
+    if seq:
+        seq.reply_received = True
+        seq.reply_text = reply_content
+        seq.replied_at = now_iso
+        seq.is_hot_lead = True
+        seq.hot_lead_reason = f"Email reply at step {step}"
+        seq.status = "replied"
+        await db.commit()
+
+        # Increment campaign counters
+        await db.execute(
+            update(OutboundCampaign)
+            .where(OutboundCampaign.id == seq.campaign_id)
+            .values(
+                email_reply_count=OutboundCampaign.email_reply_count + 1,
+                hot_leads=OutboundCampaign.hot_leads + 1,
+                responses_received=OutboundCampaign.responses_received + 1,
+            )
+        )
+
+        # In-app notification
+        notif = Notification(
+            supplier_id=seq.supplier_id,
+            notification_type="email_hot_lead",
+            title=f"📧 Email 熱線索：{seq.full_name or email}",
+            message=(
+                f"{seq.full_name or email} ({seq.company_name or ''}) "
+                f"在 Email 第 {step} 封回覆了："
+                f"{reply_content[:200]}"
+            ),
+            metadata_json=json.dumps({
+                "campaign_id": seq.campaign_id,
+                "email_sequence_id": seq.id,
+                "email": email,
+                "step": step,
+                "reply_content": reply_content,
+            }),
+        )
+        db.add(notif)
+        await db.commit()
+
+        # Slack alert
+        if settings.SLACK_WEBHOOK_URL:
+            await _push_instantly_hot_lead_slack(seq, reply_content, step)
+
+        logger.info("Email hot lead: seq=%d email=%s step=%d", seq.id, email, step)
+
+
+async def _instantly_handle_bounced(
+    db: AsyncSession,
+    inst_campaign_id: str,
+    email: str,
+    data: dict[str, Any],
+) -> None:
+    """Email bounced — mark bounce, update campaign bounce counter + rate."""
+    seq = await _get_email_seq(db, inst_campaign_id, email)
+    bounce_type: str = data.get("bounce_type", "hard")  # hard | soft
+
+    if seq:
+        seq.is_bounced = True
+        seq.bounce_type = bounce_type
+        seq.bounced_at = _ISO_NOW()
+        seq.status = "bounced"
+        await db.commit()
+
+        # Update campaign bounce counter; rate will be recalculated by analytics sync
+        await db.execute(
+            update(OutboundCampaign)
+            .where(OutboundCampaign.id == seq.campaign_id)
+            .values(email_bounce_count=OutboundCampaign.email_bounce_count + 1)
+        )
+        await db.commit()
+
+        logger.info("Email bounce: seq=%d email=%s type=%s", seq.id, email, bounce_type)
+
+
+async def _instantly_handle_unsubscribed(
+    db: AsyncSession,
+    inst_campaign_id: str,
+    email: str,
+    data: dict[str, Any],
+) -> None:
+    """Email unsubscribe — stop sequence, update counter."""
+    seq = await _get_email_seq(db, inst_campaign_id, email)
+
+    if seq:
+        seq.is_unsubscribed = True
+        seq.unsubscribed_at = _ISO_NOW()
+        seq.status = "unsubscribed"
+        await db.commit()
+
+        await db.execute(
+            update(OutboundCampaign)
+            .where(OutboundCampaign.id == seq.campaign_id)
+            .values(email_unsubscribed_count=OutboundCampaign.email_unsubscribed_count + 1)
+        )
+        await db.commit()
+        logger.info("Email unsubscribe: seq=%d email=%s", seq.id, email)
+
+
+async def _instantly_handle_opened(
+    db: AsyncSession,
+    inst_campaign_id: str,
+    email: str,
+    data: dict[str, Any],
+) -> None:
+    """Email opened — increment open counter."""
+    seq = await _get_email_seq(db, inst_campaign_id, email)
+    if seq:
+        seq.emails_opened = seq.emails_opened + 1
+        if seq.status == "imported":
+            seq.status = "active"
+        await db.commit()
+        await db.execute(
+            update(OutboundCampaign)
+            .where(OutboundCampaign.id == seq.campaign_id)
+            .values(email_opened_count=OutboundCampaign.email_opened_count + 1)
+        )
+        await db.commit()
+
+
+async def _instantly_handle_sent(
+    db: AsyncSession,
+    inst_campaign_id: str,
+    email: str,
+    data: dict[str, Any],
+) -> None:
+    """Email sent — increment sent counter, update step."""
+    seq = await _get_email_seq(db, inst_campaign_id, email)
+    step: int = data.get("step", 0)
+    if seq:
+        seq.emails_sent = seq.emails_sent + 1
+        seq.current_step = max(seq.current_step, step)
+        if seq.status in ("imported", "pending"):
+            seq.status = "active"
+        await db.commit()
+        await db.execute(
+            update(OutboundCampaign)
+            .where(OutboundCampaign.id == seq.campaign_id)
+            .values(email_sent_count=OutboundCampaign.email_sent_count + 1)
+        )
+        await db.commit()
+
+
+async def _push_instantly_hot_lead_slack(
+    seq: EmailSequence,
+    reply_content: str,
+    step: int,
+) -> None:
+    """Best-effort Slack notification for Instantly email hot leads."""
+    try:
+        import aiohttp
+        message = {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {"type": "plain_text", "text": "📧 Email 熱線索回覆！"},
+                },
+                {
+                    "type": "section",
+                    "fields": [
+                        {"type": "mrkdwn", "text": f"*姓名：*\n{seq.full_name or seq.email}"},
+                        {"type": "mrkdwn", "text": f"*公司：*\n{seq.company_name or 'N/A'}"},
+                        {"type": "mrkdwn", "text": f"*Email：*\n{seq.email}"},
+                        {"type": "mrkdwn", "text": f"*步驟：*\n第 {step} 封"},
+                    ],
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": f"*回信內容：*\n{reply_content[:500]}",
+                    },
+                },
+            ]
+        }
+        async with aiohttp.ClientSession() as client:
+            resp = await client.post(
+                settings.SLACK_WEBHOOK_URL,
+                json=message,
+                timeout=aiohttp.ClientTimeout(total=5),
+            )
+            if resp.status != 200:
+                logger.warning("Slack instant hot lead push returned %d", resp.status)
+    except Exception as exc:
+        logger.warning("Instantly Slack notification failed: %s", exc)
+

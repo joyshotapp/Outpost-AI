@@ -601,3 +601,491 @@ async def list_sequences(
         "page": page,
         "page_size": page_size,
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sprint 8 — Email Campaign API (Task 8.2)
+# ══════════════════════════════════════════════════════════════════════════════
+
+from app.models.email_sequence import EmailSequence
+from app.models.unified_lead import UnifiedLead
+
+
+class EmailCampaignCreateRequest(BaseModel):
+    campaign_name: str
+    icp_criteria: IcpCriteria
+    daily_send_limit: int = 50
+
+
+@router.post("/campaigns/email", status_code=status.HTTP_201_CREATED)
+async def create_email_campaign(
+    body: EmailCampaignCreateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Create a new email outbound campaign (campaign_type=email).
+
+    Immediately triggers Clay enrichment; Instantly import done separately
+    via POST /campaigns/{id}/start-email-sequence.
+    """
+    from app.models import Supplier as SupplierModel
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    campaign = OutboundCampaign(
+        supplier_id=supplier.id,
+        campaign_name=body.campaign_name,
+        campaign_type="email",
+        status="draft",
+        icp_criteria=json.dumps(body.icp_criteria.model_dump()),
+    )
+    db.add(campaign)
+    await db.commit()
+    await db.refresh(campaign)
+
+    # Trigger Clay enrichment (same pipeline as LinkedIn)
+    from app.tasks.outbound import enrich_contacts_pipeline
+    enrich_contacts_pipeline.delay(campaign.id, body.icp_criteria.model_dump())
+
+    logger.info("Email campaign created: id=%d supplier=%d", campaign.id, supplier.id)
+    return {"campaign_id": campaign.id, "status": campaign.status, "campaign_type": "email"}
+
+
+@router.post("/campaigns/{campaign_id}/start-email-sequence", status_code=status.HTTP_202_ACCEPTED)
+async def start_email_sequence(
+    campaign_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Import approved contacts into Instantly and start the email sequence.
+
+    Prerequisite: contacts must be enriched (clay_enrichment_status=completed)
+    and approved (status=approved) with valid email addresses.
+    """
+    from app.models import Supplier as SupplierModel
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    campaign = await _get_campaign_owned_by(campaign_id, supplier.id, db)
+    if campaign.campaign_type != "email":
+        raise HTTPException(status_code=400, detail="Campaign is not an email campaign")
+    if campaign.clay_enrichment_status != "completed":
+        raise HTTPException(status_code=400, detail="Enrichment not yet completed")
+
+    from app.tasks.outbound_email import import_contacts_to_instantly
+    import_contacts_to_instantly.delay(campaign_id)
+
+    return {"campaign_id": campaign_id, "status": "importing", "message": "Email sequence import started"}
+
+
+@router.get("/campaigns/{campaign_id}/email-sequences")
+async def list_email_sequences(
+    campaign_id: int,
+    seq_status: Optional[str] = Query(None, alias="status"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """List email sequence progress for all contacts in an email campaign."""
+    from app.models import Supplier as SupplierModel
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    await _get_campaign_owned_by(campaign_id, supplier.id, db)
+
+    query = select(EmailSequence).where(EmailSequence.campaign_id == campaign_id)
+    if seq_status:
+        query = query.where(EmailSequence.status == seq_status)
+    query = query.order_by(EmailSequence.created_at.asc())
+    query = query.offset((page - 1) * page_size).limit(page_size)
+
+    result = await db.execute(query)
+    sequences = result.scalars().all()
+
+    return {
+        "sequences": [
+            {
+                "id": s.id,
+                "email": s.email,
+                "full_name": s.full_name,
+                "company_name": s.company_name,
+                "status": s.status,
+                "current_step": s.current_step,
+                "total_steps": s.total_steps,
+                "emails_sent": s.emails_sent,
+                "emails_opened": s.emails_opened,
+                "reply_received": s.reply_received,
+                "replied_at": s.replied_at,
+                "is_bounced": s.is_bounced,
+                "bounce_type": s.bounce_type,
+                "is_unsubscribed": s.is_unsubscribed,
+                "is_hot_lead": s.is_hot_lead,
+                "hot_lead_reason": s.hot_lead_reason,
+                "hubspot_synced": s.hubspot_synced,
+                "created_at": str(s.created_at),
+            }
+            for s in sequences
+        ],
+        "total": len(sequences),
+        "page": page,
+        "page_size": page_size,
+    }
+
+
+@router.post("/campaigns/{campaign_id}/sync-analytics", status_code=status.HTTP_202_ACCEPTED)
+async def sync_campaign_analytics(
+    campaign_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Trigger an immediate analytics sync from Instantly for this campaign."""
+    from app.models import Supplier as SupplierModel
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    campaign = await _get_campaign_owned_by(campaign_id, supplier.id, db)
+    if campaign.campaign_type != "email":
+        raise HTTPException(status_code=400, detail="Analytics sync only available for email campaigns")
+
+    from app.tasks.outbound_email import sync_email_campaign_analytics
+    task = sync_email_campaign_analytics.delay(campaign_id)
+
+    return {"campaign_id": campaign_id, "task_id": task.id, "status": "syncing"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sprint 8 — Unified Leads / Business Workbench API (Task 8.5 / 8.6)
+# ══════════════════════════════════════════════════════════════════════════════
+
+@router.get("/leads")
+async def list_unified_leads(
+    lead_grade: Optional[str] = Query(None, description="A | B | C"),
+    source: Optional[str] = Query(None, description="rfq | linkedin | email | visitor | chat | manual"),
+    lead_status: Optional[str] = Query(None, alias="status"),
+    is_hot_lead: Optional[bool] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Business Workbench — List unified leads from all sources.
+
+    Supports filtering by grade (A/B/C), source, status, and hot_lead flag.
+    Sorted by lead_score DESC (highest priority first).
+    """
+    from sqlalchemy import and_, desc
+    from app.models import Supplier as SupplierModel
+
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    conditions = [UnifiedLead.supplier_id == supplier.id]
+    if lead_grade:
+        conditions.append(UnifiedLead.lead_grade == lead_grade.upper())
+    if source:
+        conditions.append(UnifiedLead.source == source)
+    if lead_status:
+        conditions.append(UnifiedLead.status == lead_status)
+    if is_hot_lead is not None:
+        conditions.append(UnifiedLead.is_hot_lead == is_hot_lead)
+
+    count_result = await db.execute(
+        select(UnifiedLead).where(and_(*conditions))
+    )
+    total = len(count_result.scalars().all())
+
+    query = (
+        select(UnifiedLead)
+        .where(and_(*conditions))
+        .order_by(desc(UnifiedLead.lead_score), UnifiedLead.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    result = await db.execute(query)
+    leads = result.scalars().all()
+
+    return {
+        "leads": [
+            {
+                "id": ld.id,
+                "email": ld.email,
+                "full_name": ld.full_name,
+                "company_name": ld.company_name,
+                "job_title": ld.job_title,
+                "source": ld.source,
+                "source_ref_id": ld.source_ref_id,
+                "lead_score": ld.lead_score,
+                "lead_grade": ld.lead_grade,
+                "status": ld.status,
+                "recommended_action": ld.recommended_action,
+                "is_hot_lead": ld.is_hot_lead,
+                "auto_reply_sent": ld.auto_reply_sent,
+                "draft_reply_body": ld.draft_reply_body,
+                "draft_reply_sent": ld.draft_reply_sent,
+                "hubspot_synced": ld.hubspot_synced,
+                "created_at": str(ld.created_at),
+                "updated_at": str(ld.updated_at),
+            }
+            for ld in leads
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "pages": (total + page_size - 1) // page_size,
+    }
+
+
+@router.get("/leads/{lead_id}")
+async def get_unified_lead(
+    lead_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Get detailed info for a single unified lead."""
+    from app.models import Supplier as SupplierModel
+
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    result = await db.execute(
+        select(UnifiedLead).where(
+            UnifiedLead.id == lead_id,
+            UnifiedLead.supplier_id == supplier.id,
+        )
+    )
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
+    return {
+        "id": lead.id,
+        "email": lead.email,
+        "full_name": lead.full_name,
+        "company_name": lead.company_name,
+        "company_domain": lead.company_domain,
+        "job_title": lead.job_title,
+        "phone": lead.phone,
+        "linkedin_url": lead.linkedin_url,
+        "source": lead.source,
+        "source_ref_id": lead.source_ref_id,
+        "lead_score": lead.lead_score,
+        "lead_grade": lead.lead_grade,
+        "score_breakdown": json.loads(lead.score_breakdown) if lead.score_breakdown else {},
+        "status": lead.status,
+        "recommended_action": lead.recommended_action,
+        "is_hot_lead": lead.is_hot_lead,
+        "hot_lead_reason": lead.hot_lead_reason,
+        "auto_reply_sent": lead.auto_reply_sent,
+        "auto_reply_type": lead.auto_reply_type,
+        "draft_reply_body": lead.draft_reply_body,
+        "draft_reply_generated_at": lead.draft_reply_generated_at,
+        "draft_reply_sent": lead.draft_reply_sent,
+        "draft_reply_sent_at": lead.draft_reply_sent_at,
+        "hubspot_contact_id": lead.hubspot_contact_id,
+        "hubspot_deal_id": lead.hubspot_deal_id,
+        "hubspot_synced": lead.hubspot_synced,
+        "raw_payload": json.loads(lead.raw_payload) if lead.raw_payload else {},
+        "created_at": str(lead.created_at),
+        "updated_at": str(lead.updated_at),
+    }
+
+
+@router.post("/leads/{lead_id}/send-draft", status_code=status.HTTP_200_OK)
+async def send_draft_reply(
+    lead_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """8.8 — Supplier confirms and sends the AI-generated draft reply.
+
+    Marks the draft as sent and updates lead status to 'contacted'.
+    Actual email delivery is handled via Instantly API.
+    """
+    from app.models import Supplier as SupplierModel
+    from sqlalchemy import update as _upd
+
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    result = await db.execute(
+        select(UnifiedLead).where(
+            UnifiedLead.id == lead_id,
+            UnifiedLead.supplier_id == supplier.id,
+        )
+    )
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    if not lead.draft_reply_body:
+        raise HTTPException(status_code=400, detail="No draft reply available. Generate draft first.")
+    if lead.draft_reply_sent:
+        raise HTTPException(status_code=400, detail="Draft already sent")
+
+    from datetime import datetime, timezone
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    await db.execute(
+        _upd(UnifiedLead)
+        .where(UnifiedLead.id == lead_id)
+        .values(
+            draft_reply_sent=True,
+            draft_reply_sent_at=now_iso,
+            status="contacted",
+        )
+    )
+    await db.commit()
+
+    logger.info("Draft sent: lead_id=%d by supplier=%d", lead_id, supplier.id)
+    return {
+        "lead_id": lead_id,
+        "draft_sent": True,
+        "sent_at": now_iso,
+        "status": "contacted",
+    }
+
+
+@router.post("/leads/{lead_id}/regenerate-draft", status_code=status.HTTP_202_ACCEPTED)
+async def regenerate_draft_reply(
+    lead_id: int,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """Force-regenerate the AI draft reply for a lead (clears existing draft)."""
+    from app.models import Supplier as SupplierModel
+    from sqlalchemy import update as _upd
+
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    result = await db.execute(
+        select(UnifiedLead).where(
+            UnifiedLead.id == lead_id,
+            UnifiedLead.supplier_id == supplier.id,
+        )
+    )
+    lead = result.scalar_one_or_none()
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead not found")
+    if lead.draft_reply_sent:
+        raise HTTPException(status_code=400, detail="Cannot regenerate — draft already sent")
+
+    # Clear existing draft so the task will regenerate
+    await db.execute(
+        _upd(UnifiedLead)
+        .where(UnifiedLead.id == lead_id)
+        .values(draft_reply_body=None, draft_reply_generated_at=None)
+    )
+    await db.commit()
+
+    from app.tasks.outbound_email import generate_b_grade_draft
+    task = generate_b_grade_draft.delay(lead_id)
+
+    return {"lead_id": lead_id, "task_id": task.id, "status": "regenerating"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Sprint 8 — Inbound Lead Intake (Task 8.5)
+# ══════════════════════════════════════════════════════════════════════════════
+
+class InboundLeadCreate(BaseModel):
+    """Manual or API-triggered inbound lead — fed through unified processing matrix."""
+
+    email: str
+    full_name: Optional[str] = None
+    company_name: Optional[str] = None
+    company_domain: Optional[str] = None
+    job_title: Optional[str] = None
+    phone: Optional[str] = None
+    linkedin_url: Optional[str] = None
+    source: str = "manual"  # rfq | linkedin | email | visitor | chat | manual
+    source_ref_id: Optional[str] = None
+    message: Optional[str] = None  # original message / RFQ body
+    raw_payload: Optional[dict] = None
+
+
+@router.post("/leads/inbound", status_code=status.HTTP_202_ACCEPTED)
+async def intake_inbound_lead(
+    body: InboundLeadCreate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    """8.5 — Unified lead intake endpoint.
+
+    Routes the lead through the entire scoring + action matrix:
+    - Grade A (≥80): Slack alert + B-grade AI draft + HubSpot deal
+    - Grade B (50-79): AI draft generated + HubSpot contact
+    - Grade C (<50): Auto thank-you reply + HubSpot contact
+
+    Returns lead_id and assigned grade immediately; async tasks run in background.
+    """
+    from app.models import Supplier as SupplierModel
+    from app.services.lead_pipeline import get_lead_pipeline
+
+    sup_result = await db.execute(
+        select(SupplierModel).where(SupplierModel.user_id == current_user.id)
+    )
+    supplier = sup_result.scalar_one_or_none()
+    if not supplier:
+        raise HTTPException(status_code=403, detail="Supplier profile required")
+
+    pipeline = get_lead_pipeline()
+    payload = body.model_dump(exclude_none=True)
+    payload["supplier_id"] = supplier.id
+
+    lead = await pipeline.process_inbound(
+        supplier_id=supplier.id,
+        email=body.email,
+        full_name=body.full_name,
+        company_name=body.company_name,
+        company_domain=body.company_domain,
+        job_title=body.job_title,
+        phone=body.phone,
+        linkedin_url=body.linkedin_url,
+        source=body.source,
+        source_ref_id=body.source_ref_id,
+        raw_payload=payload,
+        db=db,
+    )
+
+    return {
+        "lead_id": lead.id,
+        "email": lead.email,
+        "lead_grade": lead.lead_grade,
+        "lead_score": lead.lead_score,
+        "recommended_action": lead.recommended_action,
+        "status": lead.status,
+    }
+
