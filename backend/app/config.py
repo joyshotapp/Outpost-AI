@@ -137,6 +137,20 @@ class Settings(BaseSettings):
         "in today's fast-paced,it's important to note,it's worth noting",
     )
 
+    # Stripe — Subscription Plans (Sprint 11 — 11.1)
+    # Price IDs from Stripe Dashboard (create products with monthly billing)
+    STRIPE_STARTER_PRICE_ID: str = os.getenv("STRIPE_STARTER_PRICE_ID", "price_starter_monthly")
+    STRIPE_PROFESSIONAL_PRICE_ID: str = os.getenv("STRIPE_PROFESSIONAL_PRICE_ID", "price_professional_monthly")
+    STRIPE_ENTERPRISE_PRICE_ID: str = os.getenv("STRIPE_ENTERPRISE_PRICE_ID", "price_enterprise_monthly")
+    # Plan pricing in USD (for display purposes)
+    STRIPE_STARTER_PRICE_USD: int = int(os.getenv("STRIPE_STARTER_PRICE_USD", "49"))
+    STRIPE_PROFESSIONAL_PRICE_USD: int = int(os.getenv("STRIPE_PROFESSIONAL_PRICE_USD", "149"))
+    STRIPE_ENTERPRISE_PRICE_USD: int = int(os.getenv("STRIPE_ENTERPRISE_PRICE_USD", "499"))
+    # Trial period in days (0 = no trial)
+    STRIPE_TRIAL_DAYS: int = int(os.getenv("STRIPE_TRIAL_DAYS", "14"))
+    # Stripe portal return URL
+    STRIPE_PORTAL_RETURN_URL: str = os.getenv("STRIPE_PORTAL_RETURN_URL", "http://localhost:3001/billing")
+
     # Elasticsearch (Sprint 10 — 10.1: supplier full-text search)
     ES_SUPPLIERS_INDEX: str = os.getenv("ES_SUPPLIERS_INDEX", "suppliers")
     SEARCH_MAX_RESULTS: int = int(os.getenv("SEARCH_MAX_RESULTS", "100"))

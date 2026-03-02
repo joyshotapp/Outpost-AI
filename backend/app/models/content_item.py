@@ -1,6 +1,6 @@
 """Content item model (generated content) — Sprint 9 enhanced."""
 
-from sqlalchemy import Boolean, Column, Integer, String, Text
+from sqlalchemy import Boolean, Column, Integer, String, Text, DateTime
 
 from app.models.base import BaseModel
 
@@ -57,6 +57,12 @@ class ContentItem(BaseModel):
     reviewed_by = Column(Integer, nullable=True)             # FK → users.id
     quality_checked = Column(Boolean, default=False, nullable=False)
     quality_score = Column(Integer, nullable=True)           # 0-100 from AI guard
+
+    # ── Sprint 11: Admin content review queue ────────────────────────────────
+    review_status = Column(String(20), default="pending", nullable=False)
+    # pending | approved | rejected | flagged
+    review_note = Column(Text, nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
 
     # ── Performance metrics (synced from platform analytics) ─────────────────
     impressions = Column(Integer, default=0, nullable=False)

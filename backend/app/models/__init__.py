@@ -22,6 +22,9 @@ from app.models.email_sequence import EmailSequence
 from app.models.unified_lead import UnifiedLead
 from app.models.saved_supplier import SavedSupplier
 from app.models.direct_message import DirectMessage
+from app.models.subscription import Subscription, PlanTier, SubscriptionStatus
+from app.models.api_usage_record import ApiUsageRecord
+from app.models.system_setting import SystemSetting
 
 __all__ = [
     "Base",
@@ -47,5 +50,10 @@ __all__ = [
     "HeyGenUsageRecord",
     "SavedSupplier",
     "DirectMessage",
+    "Subscription",
+    "PlanTier",
+    "SubscriptionStatus",
+    "ApiUsageRecord",
+    "SystemSetting",
 ]
 
