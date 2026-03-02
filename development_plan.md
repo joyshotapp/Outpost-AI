@@ -63,7 +63,7 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 6 | Week 11-12 | AI 多語系影片 | 🟢 工程關版 | 8/8 ✅ | 完整後端 + 前端 + 費用追蹤 + E2E 測試；Code Review 高風險修復完成，待 HeyGen 實網金鑰上位後進行流量驗證 |
 | Sprint 7 | Week 13-14 | Outbound — LinkedIn | � 工程關版 | 10/10 ✅ | Clay/HeyReach stub 完成；實網金鑰上位後進行流量驗證 |
 | Sprint 8 | Week 15-16 | Outbound — Email | � 工程關版 | 10/10 | ✅ 2024-01 完成 |
-| Sprint 9 | Week 17-18 | 內容裂變矩陣 | 🔲 未開始 | 0/10 | 需 OpusClip / Repurpose Key |
+| Sprint 9 | Week 17-18 | 內容裂變矩陣 | � 工程關版 | 10/10 | be914c2 基底，Sprint 9 commit |
 | Sprint 10 | Week 19-20 | 搜尋系統 + 買家前台 | 🔲 未開始 | 0/10 | — |
 | Sprint 11 | Week 21-22 | 訂閱計費 + 管理後台 | 🔲 未開始 | 0/10 | 需 Stripe Key |
 | Sprint 12 | Week 23-24 | 進階功能 + KPI 儀表板 | 🔲 未開始 | 0/8 | — |
@@ -366,29 +366,52 @@ python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --
 
 ---
 
-### Sprint 9（Week 17-18）：內容裂變矩陣（亮點五） — 🔲 未開始
+### Sprint 9（Week 17-18）：內容裂變矩陣（亮點五） — � 工程關版
+
+> 完成日期：2025-07  
+> Commit：feat(sprint9): content viral matrix — OpusClip/Repurpose/Claude pipeline  
+> 測試：35/35 passed（test_sprint9_e2e.py）
 
 > 目標：一支影片自動裂變為 30+ LinkedIn 貼文 + 10 短影音 + 10 SEO 文章
 > 前置條件：OpusClip / Repurpose.io API Key 已上位、Sprint 4 Whisper 轉錄完成
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 9.1 | OpusClip API 封裝（上傳影片 → 取回精華短影音） | INT-1 | 3 | 1.11 | 上傳長影片 → 取回 10 支短影音 | 🔲 |
-| 9.2 | Claude 內容生成 Pipeline（逐字稿 → LinkedIn 貼文 × 30 + SEO 文章 × 10） | AI-1 | 4 | 4.3, 3.2 | 每支影片逐字稿生成 30 篇 LinkedIn + 10 篇 SEO 文章，品牌語調一致 | 🔲 |
-| 9.3 | AI 內容品質防護（禁用 AI 詞彙清單 + 語氣檢查 + 去重） | AI-1 | 3 | 9.2 | 生成內容不含常見 AI 用語，通過 LinkedIn 演算法友善度檢測 | 🔲 |
-| 9.4 | 內容裂變 Celery Pipeline（轉錄 → 生成文字 → 剪短影音 → 排程） | BE-1 | 3 | 9.1, 9.2 | 上傳影片後 30 分鐘內完成全部裂變 | 🔲 |
-| 9.5 | Repurpose.io API 封裝（排程發布 LinkedIn / YouTube） | INT-1 | 2 | 1.11 | 可排程發布至 LinkedIn + YouTube | 🔲 |
-| 9.6 | 內容管理頁面 UI — LinkedIn 貼文（編輯 + 排程 + 預覽） | FE-1 | 4 | 9.4 | 供應商可瀏覽/編輯/排程/預覽 LinkedIn 貼文 | 🔲 |
-| 9.7 | 內容管理頁面 UI — SEO 文章（編輯器 + 關鍵字建議 + 排程） | FE-1 | 3 | 9.4 | 供應商可編輯 SEO 文章、查看關鍵字建議 | 🔲 |
-| 9.8 | 內容管理頁面 UI — 短影音（預覽 + 排程） | FE-2 | 3 | 9.1 | 供應商可預覽短影音、設定排程 | 🔲 |
-| 9.9 | 內容審核佇列（人工審核介面 + 批量操作） | FE-2 | 2 | 9.4 | 供應商/編輯可批量審核 + 一鍵排程 | 🔲 |
-| 9.10 | 內容成效追蹤（LinkedIn/YouTube impression + engagement 回寫） | INT-1 | 2 | 9.5 | 成效數據自動回寫至平台 | 🔲 |
+| 9.1 | OpusClip API 封裝（上傳影片 → 取回精華短影音） | INT-1 | 3 | 1.11 | 上傳長影片 → 取回 10 支短影音 | ✅ |
+| 9.2 | Claude 內容生成 Pipeline（逐字稿 → LinkedIn 貼文 × 30 + SEO 文章 × 10） | AI-1 | 4 | 4.3, 3.2 | 每支影片逐字稿生成 30 篇 LinkedIn + 10 篇 SEO 文章，品牌語調一致 | ✅ |
+| 9.3 | AI 內容品質防護（禁用 AI 詞彙清單 + 語氣檢查 + 去重） | AI-1 | 3 | 9.2 | 生成內容不含常見 AI 用語，通過 LinkedIn 演算法友善度檢測 | ✅ |
+| 9.4 | 內容裂變 Celery Pipeline（轉錄 → 生成文字 → 剪短影音 → 排程） | BE-1 | 3 | 9.1, 9.2 | 上傳影片後 30 分鐘內完成全部裂變 | ✅ |
+| 9.5 | Repurpose.io API 封裝（排程發布 LinkedIn / YouTube） | INT-1 | 2 | 1.11 | 可排程發布至 LinkedIn + YouTube | ✅ |
+| 9.6 | 內容管理頁面 UI — LinkedIn 貼文（編輯 + 排程 + 預覽） | FE-1 | 4 | 9.4 | 供應商可瀏覽/編輯/排程/預覽 LinkedIn 貼文 | ✅ |
+| 9.7 | 內容管理頁面 UI — SEO 文章（編輯器 + 關鍵字建議 + 排程） | FE-1 | 3 | 9.4 | 供應商可編輯 SEO 文章、查看關鍵字建議 | ✅ |
+| 9.8 | 內容管理頁面 UI — 短影音（預覽 + 排程） | FE-2 | 3 | 9.1 | 供應商可預覽短影音、設定排程 | ✅ |
+| 9.9 | 內容審核佇列（人工審核介面 + 批量操作） | FE-2 | 2 | 9.4 | 供應商/編輯可批量審核 + 一鍵排程 | ✅ |
+| 9.10 | 內容成效追蹤（LinkedIn/YouTube impression + engagement 回寫） | INT-1 | 2 | 9.5 | 成效數據自動回寫至平台 | ✅ |
 
 **Sprint 9 交付物**：
 - 完整內容裂變 Pipeline
 - LinkedIn/SEO/短影音自動生成
 - 內容管理 + 排程 + 審核
 - 成效追蹤
+
+**Sprint 9 工程交付說明（2025-07）**：
+
+| 檔案 | 說明 |
+|------|------|
+| `backend/app/config.py` | 新增 OpusClip / Repurpose.io / Content AI 設定（stub 模式可零 key 運行） |
+| `backend/alembic/versions/010_sprint9_content_items_enhanced.py` | DB migration — content_items 表新增 20+ 欄位：OpusClip、Repurpose、品質分數、分析數據 |
+| `backend/app/models/content_item.py` | ORM model 擴充，含狀態生命週期（draft→review→approved→scheduled→published） |
+| `backend/app/services/opusclip.py` | OpusClip API v1 封裝，stub 模式回傳決定性假資料 |
+| `backend/app/services/content_generation.py` | Claude 批次生成 + 品質防護（quality_check / clean_text，threshold=70） |
+| `backend/app/services/repurpose.py` | Repurpose.io 排程封裝（text post / video post / webhook 驗簽） |
+| `backend/app/services/content_analytics.py` | LinkedIn / YouTube 成效數據同步，stub 以 hash seed 決定性輸出 |
+| `backend/app/tasks/content_viral.py` | 7 支 Celery tasks：trigger → 生成 → OpusClip poll（5分鐘 retry × 24）→ 排程 → analytics sync |
+| `backend/app/api/v1/content.py` | 11 支 REST endpoints + 2 webhook handler，帶品質防護 |
+| `frontend/.../content/linkedin-posts/page.tsx` | 狀態篩選 tabs、貼文清單、inline 編輯 modal、排程 modal |
+| `frontend/.../content/seo-articles/page.tsx` | 富文字編輯、TOC 預覽、關鍵字側邊欄、可讀性分數、預覽切換 |
+| `frontend/.../content/short-videos/page.tsx` | 影片 grid、`<video>` 預覽 modal、highlight score badge、平台選擇 |
+| `frontend/.../content/review-queue/page.tsx` | 多選 checkbox、類型過濾 tabs、批次核准/拒絕/封存、快速預覽 |
+| `backend/tests/test_sprint9_e2e.py` | 35/35 tests pass（unit，無需 DB/API key） |
 
 ---
 

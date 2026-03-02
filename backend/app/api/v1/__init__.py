@@ -4,6 +4,7 @@ from fastapi import APIRouter
 
 from app.api.v1.admin import router as admin_router
 from app.api.v1.auth import router as auth_router
+from app.api.v1.content import router as content_router
 from app.api.v1.knowledge_base import router as knowledge_base_router
 from app.api.v1.notifications import router as notifications_router
 from app.api.v1.outbound import router as outbound_router
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/api/v1", tags=["v1"])
 # Include routes
 router.include_router(admin_router)
 router.include_router(auth_router)
+router.include_router(content_router)
 router.include_router(knowledge_base_router)
 router.include_router(notifications_router)
 router.include_router(outbound_router)

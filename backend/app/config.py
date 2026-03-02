@@ -114,6 +114,29 @@ class Settings(BaseSettings):
     HUBSPOT_PIPELINE_ID: Optional[str] = os.getenv("HUBSPOT_PIPELINE_ID")
     HUBSPOT_PORTAL_ID: Optional[str] = os.getenv("HUBSPOT_PORTAL_ID")
 
+    # OpusClip (Sprint 9 — 9.1: short-video generation)
+    OPUSCLIP_API_KEY: Optional[str] = os.getenv("OPUSCLIP_API_KEY")
+    OPUSCLIP_API_BASE_URL: str = os.getenv("OPUSCLIP_API_BASE_URL", "https://api.opus.pro/v1")
+    OPUSCLIP_WEBHOOK_SECRET: Optional[str] = os.getenv("OPUSCLIP_WEBHOOK_SECRET")
+    # Number of short clips to request per source video
+    OPUSCLIP_CLIPS_PER_VIDEO: int = int(os.getenv("OPUSCLIP_CLIPS_PER_VIDEO", "10"))
+
+    # Repurpose.io (Sprint 9 — 9.5: multi-channel scheduler)
+    REPURPOSE_API_KEY: Optional[str] = os.getenv("REPURPOSE_API_KEY")
+    REPURPOSE_API_BASE_URL: str = os.getenv("REPURPOSE_API_BASE_URL", "https://api.repurpose.io/v1")
+    REPURPOSE_WEBHOOK_SECRET: Optional[str] = os.getenv("REPURPOSE_WEBHOOK_SECRET")
+
+    # Content generation limits (Sprint 9 — 9.2)
+    CONTENT_MAX_LINKEDIN_POSTS: int = int(os.getenv("CONTENT_MAX_LINKEDIN_POSTS", "30"))
+    CONTENT_MAX_SEO_ARTICLES: int = int(os.getenv("CONTENT_MAX_SEO_ARTICLES", "10"))
+    # AI quality guard — comma-separated banned phrases (9.3)
+    CONTENT_AI_BANNED_PHRASES: str = os.getenv(
+        "CONTENT_AI_BANNED_PHRASES",
+        "as an ai,as a language model,i cannot,i'm unable to,certainly!,absolutely!,"
+        "delve,leverage,harness,game-changer,cutting-edge,synergy,revolutionize,"
+        "in today's fast-paced,it's important to note,it's worth noting",
+    )
+
     # Celery
     CELERY_BROKER_URL: str = os.getenv("CELERY_BROKER_URL", REDIS_URL)
     CELERY_RESULT_BACKEND: str = os.getenv(
