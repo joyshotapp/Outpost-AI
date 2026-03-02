@@ -195,7 +195,7 @@ async def list_content_items(
 
 
 @router.get(
-    "/{item_id}",
+    "/{item_id:int}",
     response_model=ContentItemOut,
     summary="Get single content item",
 )
@@ -209,7 +209,7 @@ async def get_content_item(
 
 
 @router.patch(
-    "/{item_id}",
+    "/{item_id:int}",
     response_model=ContentItemOut,
     summary="Edit content item (title/body/keywords/hashtags)",
 )
@@ -231,7 +231,7 @@ async def patch_content_item(
 
 
 @router.patch(
-    "/{item_id}/status",
+    "/{item_id:int}/status",
     response_model=ContentItemOut,
     summary="Update content item status (approve/reject/schedule)",
 )
@@ -255,7 +255,7 @@ async def update_content_status(
 
 
 @router.post(
-    "/{item_id}/schedule",
+    "/{item_id:int}/schedule",
     status_code=status.HTTP_202_ACCEPTED,
     summary="Schedule item for publishing via Repurpose.io (9.5)",
 )
@@ -266,7 +266,7 @@ async def schedule_content_item(
     current_supplier: dict = Depends(get_current_supplier),
 ) -> dict[str, Any]:
     item = await _get_item_for_supplier(item_id, current_supplier["id"], db)
-    if item.status not in ("approved", "draft"):
+    if item.status != "approved":
         raise HTTPException(
             status_code=400,
             detail=f"Item must be approved before scheduling (current status: {item.status})",

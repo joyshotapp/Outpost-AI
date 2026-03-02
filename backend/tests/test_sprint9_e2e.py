@@ -13,7 +13,6 @@ All tests run entirely in-process (no DB, no network).
 
 import hashlib
 import hmac
-import asyncio
 import pytest
 
 
@@ -351,3 +350,23 @@ class TestQualityGuardEdgeCases:
         first_pass = svc.clean_text(dirty)
         second_pass = svc.clean_text(first_pass)
         assert first_pass == second_pass
+
+
+class TestContentApiRoutingRegressions:
+    def test_item_routes_use_int_path_converter(self):
+        from app.api.v1.content import router
+
+        paths = {route.path for route in router.routes}
+        assert "/content/{item_id:int}" in paths
+        assert "/content/{item_id:int}/status" in paths
+        assert "/content/{item_id:int}/schedule" in paths
+
+
+class TestContentViralTaskHelpers:
+    def test_run_async_executes_coroutine(self):
+        from app.tasks.content_viral import _run_async
+
+        async def _sample() -> int:
+            return 42
+
+        assert _run_async(_sample()) == 42

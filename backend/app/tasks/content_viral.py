@@ -41,6 +41,15 @@ logger = logging.getLogger(__name__)
 _ISO_NOW = lambda: datetime.now(timezone.utc).isoformat()  # noqa: E731
 
 
+def _run_async(coro: Any) -> Any:
+    """Run async coroutine in an isolated event loop (Celery-safe)."""
+    loop = asyncio.new_event_loop()
+    try:
+        return loop.run_until_complete(coro)
+    finally:
+        loop.close()
+
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────────────
@@ -122,9 +131,7 @@ def trigger_content_viral_pipeline(self, video_id: int) -> dict[str, Any]:
 )
 def generate_linkedin_posts_task(self, video_id: int) -> dict[str, Any]:
     """Generate up to CONTENT_MAX_LINKEDIN_POSTS posts from a video transcript."""
-    return asyncio.get_event_loop().run_until_complete(
-        _async_generate_linkedin_posts(video_id)
-    )
+    return _run_async(_async_generate_linkedin_posts(video_id))
 
 
 async def _async_generate_linkedin_posts(video_id: int) -> dict[str, Any]:
@@ -174,9 +181,7 @@ async def _async_generate_linkedin_posts(video_id: int) -> dict[str, Any]:
 )
 def generate_seo_articles_task(self, video_id: int) -> dict[str, Any]:
     """Generate up to CONTENT_MAX_SEO_ARTICLES articles from a video transcript."""
-    return asyncio.get_event_loop().run_until_complete(
-        _async_generate_seo_articles(video_id)
-    )
+    return _run_async(_async_generate_seo_articles(video_id))
 
 
 async def _async_generate_seo_articles(video_id: int) -> dict[str, Any]:
@@ -223,9 +228,7 @@ async def _async_generate_seo_articles(video_id: int) -> dict[str, Any]:
 )
 def clip_short_videos_task(self, video_id: int) -> dict[str, Any]:
     """Submit video to OpusClip for short-clip generation."""
-    return asyncio.get_event_loop().run_until_complete(
-        _async_clip_short_videos(self, video_id)
-    )
+    return _run_async(_async_clip_short_videos(self, video_id))
 
 
 async def _async_clip_short_videos(task_self: Any, video_id: int) -> dict[str, Any]:
@@ -296,16 +299,12 @@ def poll_opusclip_job(
         raise self.retry()
 
     if status == "failed":
-        asyncio.get_event_loop().run_until_complete(
-            _mark_clips_failed(placeholder_ids, "OpusClip job failed")
-        )
+        _run_async(_mark_clips_failed(placeholder_ids, "OpusClip job failed"))
         return {"job_id": job_id, "status": "failed"}
 
     # Completed — fetch clips
     clips = opus.get_clips(job_id)
-    asyncio.get_event_loop().run_until_complete(
-        _write_clip_results(placeholder_ids, clips)
-    )
+    _run_async(_write_clip_results(placeholder_ids, clips))
     logger.info("OpusClip job %s completed — %d clips written", job_id, len(clips))
     return {"job_id": job_id, "status": "completed", "clips_written": len(clips)}
 
@@ -368,9 +367,7 @@ def schedule_approved_post(
     scheduled_at: str | None = None,
 ) -> dict[str, Any]:
     """Push an approved ContentItem to Repurpose.io for scheduled publishing."""
-    return asyncio.get_event_loop().run_until_complete(
-        _async_schedule_approved_post(self, content_item_id, workflow_id, scheduled_at)
-    )
+    return _run_async(_async_schedule_approved_post(self, content_item_id, workflow_id, scheduled_at))
 
 
 async def _async_schedule_approved_post(
@@ -387,6 +384,12 @@ async def _async_schedule_approved_post(
 
     if not item:
         return {"error": f"ContentItem {content_item_id} not found"}
+
+    if item.status != "approved":
+        return {
+            "error": f"ContentItem {content_item_id} must be approved before scheduling",
+            "status": item.status,
+        }
 
     svc = RepurposeService()
     try:
@@ -441,9 +444,7 @@ def sync_content_analytics_task(
 
     Processes all published ContentItems (optionally filtered by supplier_id).
     """
-    return asyncio.get_event_loop().run_until_complete(
-        _async_sync_content_analytics(supplier_id)
-    )
+    return _run_async(_async_sync_content_analytics(supplier_id))
 
 
 async def _async_sync_content_analytics(supplier_id: int | None) -> dict[str, Any]:
@@ -488,9 +489,7 @@ async def _async_sync_content_analytics(supplier_id: int | None) -> dict[str, An
 @shared_task(name="content.run_quality_guard")
 def run_quality_guard_task(content_item_id: int) -> dict[str, Any]:
     """Re-run quality check on a ContentItem and update its score and status."""
-    return asyncio.get_event_loop().run_until_complete(
-        _async_run_quality_guard(content_item_id)
-    )
+    return _run_async(_async_run_quality_guard(content_item_id))
 
 
 async def _async_run_quality_guard(content_item_id: int) -> dict[str, Any]:
