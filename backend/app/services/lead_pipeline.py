@@ -24,7 +24,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.unified_lead import UnifiedLead
-from app.services.lead_scoring import LeadScoringService
+from app.services.lead_scoring import LeadScoringEngine
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,64 @@ class LeadPipelineService:
     """Route inbound signals through the unified lead processing matrix."""
 
     def __init__(self) -> None:
-        self.scorer = LeadScoringService()
+        self.scorer = LeadScoringEngine()
+
+    async def _score_inbound_signal(
+        self,
+        *,
+        source: str,
+        company_name: str | None,
+        company_domain: str | None,
+        raw_payload: dict[str, Any] | None,
+    ) -> tuple[int, dict[str, Any]]:
+        """Return score and score breakdown for generic inbound signals.
+
+        Uses existing RFQ scorer when source has textual RFQ context, and falls
+        back to deterministic heuristics for non-RFQ channels.
+        """
+        payload = raw_payload or {}
+
+        if source == "rfq":
+            rfq_text = str(
+                payload.get("rfq_text")
+                or payload.get("message")
+                or payload.get("content")
+                or ""
+            )
+            if rfq_text.strip():
+                try:
+                    rfq_result = await self.scorer.score_rfq(
+                        rfq_text=rfq_text,
+                        buyer_company_name=company_name,
+                        buyer_domain=company_domain,
+                        parsed_rfq_data=payload.get("parsed_rfq_data"),
+                    )
+                    score = int(rfq_result.get("lead_score", 0))
+                    return score, {"source": "rfq_engine", **rfq_result}
+                except Exception as exc:
+                    logger.warning("RFQ scoring failed, fallback heuristic used: %s", exc)
+
+        # Heuristic scoring for non-RFQ and RFQ fallback
+        score = 25
+        if company_name:
+            score += 10
+        if company_domain:
+            score += 10
+        job_title = str(payload.get("job_title") or "").lower()
+        if any(k in job_title for k in ("manager", "director", "head", "owner", "procurement")):
+            score += 20
+        if source in ("email", "linkedin"):
+            score += 15
+        if source == "rfq":
+            score += 20
+        score = max(0, min(100, score))
+
+        return score, {
+            "source": "heuristic",
+            "company_name": bool(company_name),
+            "company_domain": bool(company_domain),
+            "source_channel": source,
+        }
 
     # ── Main entry point ──────────────────────────────────────────────────────
 
@@ -89,16 +146,13 @@ class LeadPipelineService:
             score = override_score
             score_breakdown: dict[str, Any] = {"override": True}
         else:
-            score_input = {
-                "company_name": company_name or "",
-                "company_domain": company_domain or "",
-                "job_title": job_title or "",
-                "source": source,
-                **(raw_payload or {}),
-            }
-            score_result = self.scorer.score_lead(score_input)
-            score = score_result.get("total_score", 0)
-            score_breakdown = score_result
+            merged_payload = {"job_title": job_title or "", **(raw_payload or {})}
+            score, score_breakdown = await self._score_inbound_signal(
+                source=source,
+                company_name=company_name,
+                company_domain=company_domain,
+                raw_payload=merged_payload,
+            )
 
         grade = _compute_grade(score)
         action = _recommended_action(grade, source)
@@ -191,11 +245,11 @@ class LeadPipelineService:
         elif lead.lead_grade == "A":
             # Grade A: Slack notification + draft reply
             if not lead.slack_notified:
-                await self._notify_slack_hot_lead(lead)
+                await self._send_slack_hot_lead_alert(lead)
             if not lead.draft_reply_body:
                 generate_b_grade_draft.delay(lead.id)   # also generate draft for A
 
-    async def _notify_slack_hot_lead(self, lead: UnifiedLead) -> None:
+    async def _send_slack_hot_lead_alert(self, lead: UnifiedLead) -> None:
         """Send Slack hot-lead alert for Grade A leads."""
         from app.services.slack import get_slack_service
 

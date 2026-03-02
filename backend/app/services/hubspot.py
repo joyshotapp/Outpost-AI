@@ -27,9 +27,14 @@ _HUBSPOT_API_BASE = "https://api.hubapi.com"
 class HubSpotService:
     """Wrapper around HubSpot CRM REST API v3."""
 
-    def __init__(self) -> None:
-        self.token: str | None = settings.HUBSPOT_PRIVATE_APP_TOKEN
-        self.pipeline_id: str | None = settings.HUBSPOT_PIPELINE_ID
+    def __init__(
+        self,
+        api_token: str | None = None,
+        pipeline_id: str | None = None,
+    ) -> None:
+        self.token: str | None = api_token if api_token is not None else settings.HUBSPOT_PRIVATE_APP_TOKEN
+        self.pipeline_id: str | None = pipeline_id if pipeline_id is not None else settings.HUBSPOT_PIPELINE_ID
+        self.stub_mode: bool = not bool(self.token)
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -40,7 +45,7 @@ class HubSpotService:
         }
 
     def _available(self) -> bool:
-        return bool(self.token)
+        return not self.stub_mode
 
     # ── Contacts ──────────────────────────────────────────────────────────────
 

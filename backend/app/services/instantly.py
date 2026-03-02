@@ -29,8 +29,14 @@ class InstantlyService:
 
     BASE_URL = settings.INSTANTLY_API_BASE_URL
 
-    def __init__(self) -> None:
-        self.api_key: str | None = settings.INSTANTLY_API_KEY
+    def __init__(
+        self,
+        api_key: str | None = None,
+        base_url: str | None = None,
+    ) -> None:
+        self.api_key: str | None = api_key if api_key is not None else settings.INSTANTLY_API_KEY
+        self.base_url: str = base_url or self.BASE_URL
+        self.stub_mode: bool = not bool(self.api_key)
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
@@ -41,7 +47,7 @@ class InstantlyService:
         }
 
     def _available(self) -> bool:
-        return bool(self.api_key)
+        return not self.stub_mode
 
     def _stub_campaign(self, name: str) -> dict[str, Any]:
         return {
@@ -77,7 +83,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.post(
-                    f"{self.BASE_URL}/campaigns",
+                    f"{self.base_url}/campaigns",
                     json=payload,
                     headers=self._headers(),
                 )
@@ -101,7 +107,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.get(
-                    f"{self.BASE_URL}/campaigns/{campaign_id}",
+                    f"{self.base_url}/campaigns/{campaign_id}",
                     headers=self._headers(),
                 )
                 resp.raise_for_status()
@@ -118,7 +124,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.post(
-                    f"{self.BASE_URL}/campaigns/{campaign_id}/pause",
+                    f"{self.base_url}/campaigns/{campaign_id}/pause",
                     headers=self._headers(),
                 )
                 resp.raise_for_status()
@@ -135,7 +141,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.post(
-                    f"{self.BASE_URL}/campaigns/{campaign_id}/resume",
+                    f"{self.base_url}/campaigns/{campaign_id}/resume",
                     headers=self._headers(),
                 )
                 resp.raise_for_status()
@@ -171,7 +177,7 @@ class InstantlyService:
             try:
                 with httpx.Client(timeout=30) as client:
                     resp = client.post(
-                        f"{self.BASE_URL}/campaigns/{campaign_id}/leads",
+                        f"{self.base_url}/campaigns/{campaign_id}/leads",
                         json={"leads": batch},
                         headers=self._headers(),
                     )
@@ -205,7 +211,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.get(
-                    f"{self.BASE_URL}/campaigns/{campaign_id}/leads/{email}",
+                    f"{self.base_url}/campaigns/{campaign_id}/leads/{email}",
                     headers=self._headers(),
                 )
                 resp.raise_for_status()
@@ -238,7 +244,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.get(
-                    f"{self.BASE_URL}/campaigns/{campaign_id}/analytics",
+                    f"{self.base_url}/campaigns/{campaign_id}/analytics",
                     headers=self._headers(),
                 )
                 resp.raise_for_status()
@@ -267,7 +273,7 @@ class InstantlyService:
         try:
             with httpx.Client(timeout=30) as client:
                 resp = client.get(
-                    f"{self.BASE_URL}/campaigns",
+                    f"{self.base_url}/campaigns",
                     params={"limit": limit, "skip": skip},
                     headers=self._headers(),
                 )
@@ -280,7 +286,11 @@ class InstantlyService:
     # ── Webhook signature verification ───────────────────────────────────────
 
     @staticmethod
-    def verify_webhook_signature(body: bytes, signature_header: str | None) -> bool:
+    def verify_webhook_signature(
+        body: bytes,
+        signature_header: str | None,
+        secret: str | None = None,
+    ) -> bool:
         """Verify HMAC-SHA256 signature from Instantly webhook.
 
         Returns True in dev mode (no secret configured).
@@ -288,19 +298,22 @@ class InstantlyService:
         import hashlib
         import hmac
 
-        secret = settings.INSTANTLY_WEBHOOK_SECRET
-        if not secret:
+        secret_value = secret if secret is not None else settings.INSTANTLY_WEBHOOK_SECRET
+        if not secret_value:
             return True  # Dev mode — accept all
 
         if not signature_header:
             return False
 
         expected = hmac.new(
-            secret.encode("utf-8"),
+            secret_value.encode("utf-8"),
             body,
             hashlib.sha256,
         ).hexdigest()
-        return hmac.compare_digest(f"sha256={expected}", signature_header)
+        return hmac.compare_digest(f"sha256={expected}", signature_header) or hmac.compare_digest(
+            expected,
+            signature_header,
+        )
 
 
 _instantly_service: InstantlyService | None = None
