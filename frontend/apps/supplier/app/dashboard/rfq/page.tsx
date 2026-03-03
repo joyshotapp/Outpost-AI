@@ -16,7 +16,7 @@ interface RFQData {
   status: 'new' | 'viewed' | 'replied' | 'archived'
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 function mapApiRFQ(rfq: Record<string, unknown>): RFQData {
   return {
@@ -54,7 +54,7 @@ export default function RFQInboxPage() {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
 
-        const listResponse = await fetch(`${API_BASE_URL}/api/v1/rfqs`, { headers })
+        const listResponse = await fetch(`${API_BASE_URL}/rfqs`, { headers })
         if (!listResponse.ok) {
           throw new Error(`Failed to fetch RFQs: ${listResponse.statusText}`)
         }
@@ -62,7 +62,7 @@ export default function RFQInboxPage() {
 
         // Fetch full RFQ details in parallel to get description and quantity
         const detailPromises = listData.map((r: { id: number }) =>
-          fetch(`${API_BASE_URL}/api/v1/rfqs/${r.id}`, { headers }).then(res => res.json())
+          fetch(`${API_BASE_URL}/rfqs/${r.id}`, { headers }).then(res => res.json())
         )
         const details = await Promise.all(detailPromises)
 
@@ -94,7 +94,7 @@ export default function RFQInboxPage() {
 
       const skip = rfqs.length
       const response = await fetch(
-        `${API_BASE_URL}/api/v1/rfqs?skip=${skip}&limit=20`,
+        `${API_BASE_URL}/rfqs?skip=${skip}&limit=20`,
         { headers }
       )
 
@@ -106,7 +106,7 @@ export default function RFQInboxPage() {
       if (listData.length === 0) return
 
       const detailPromises = listData.map((r: { id: number }) =>
-        fetch(`${API_BASE_URL}/api/v1/rfqs/${r.id}`, { headers }).then(res => res.json())
+        fetch(`${API_BASE_URL}/rfqs/${r.id}`, { headers }).then(res => res.json())
       )
       const details = await Promise.all(detailPromises)
       const newRFQData = details.map(mapApiRFQ)

@@ -4,7 +4,7 @@
   "description": "Buyer Frontend Application",
   "private": true,
   "scripts": {
-    "dev": "next dev -p 3000",
+    "dev": "next dev -p 3004",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -22,6 +22,10 @@
     "next-intl": "^2.20.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/react": "^18.2.0",
     "@types/node": "^20.0.0",
     "typescript": "^5.3.0",

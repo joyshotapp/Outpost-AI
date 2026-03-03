@@ -99,6 +99,10 @@ class UnreadCountResponse(BaseModel):
 
 def _buyer_id_from_user(user: User) -> int | None:
     """Extract the buyer_id from the user's profile, if it exists."""
+    role = getattr(user, "role", None)
+    role_value = getattr(role, "value", role)
+    if role_value != "buyer":
+        return None
     return getattr(user, "buyer_profile_id", None) or getattr(user, "id", None)
 
 
@@ -107,7 +111,9 @@ def _supplier_id_from_user(user: User) -> int | None:
 
 
 def _is_buyer(user: User) -> bool:
-    return getattr(user, "role", "") == "buyer" or True   # default: buyers can message
+    role = getattr(user, "role", None)
+    role_value = getattr(role, "value", role)
+    return role_value == "buyer"
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────

@@ -12,7 +12,7 @@ interface ChatMessage {
   content: string
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api/v1', '') || 'http://localhost:8001'
 
 export default function AIAvatarWidget({ supplierId }: AIAvatarWidgetProps) {
   const [isOpen, setIsOpen] = useState(false)

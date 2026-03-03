@@ -17,6 +17,7 @@ class TestApolloService:
         """Create Apollo service instance"""
         service = ApolloService()
         service.redis_client = None
+        service.stub_mode = False  # disable stub mode for unit tests (HTTP is mocked)
         return service
 
     @pytest.mark.asyncio

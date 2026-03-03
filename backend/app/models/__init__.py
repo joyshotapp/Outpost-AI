@@ -25,6 +25,10 @@ from app.models.direct_message import DirectMessage
 from app.models.subscription import Subscription, PlanTier, SubscriptionStatus
 from app.models.api_usage_record import ApiUsageRecord
 from app.models.system_setting import SystemSetting
+from app.models.exhibition import Exhibition
+from app.models.business_card import BusinessCard
+from app.models.remarketing_sequence import RemarketingSequence
+from app.models.nurture_sequence import NurtureSequence
 
 __all__ = [
     "Base",
@@ -55,5 +59,9 @@ __all__ = [
     "SubscriptionStatus",
     "ApiUsageRecord",
     "SystemSetting",
+    "Exhibition",
+    "BusinessCard",
+    "RemarketingSequence",
+    "NurtureSequence",
 ]
 

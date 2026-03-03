@@ -148,8 +148,17 @@ class TestClayEnrichmentPipeline:
     def test_clay_stub_pipeline_saves_contacts(self, s7_db, s7_supplier_user):
         """_enrich_contacts_pipeline_async stub saves 0 contacts (no real Clay API)."""
         from app.tasks.outbound import _enrich_contacts_pipeline_async
+        from unittest.mock import MagicMock
 
         _user, supplier = s7_supplier_user
+
+        # Mock Clay service so no real HTTP calls are made
+        mock_clay = MagicMock()
+        mock_clay.create_table.return_value = {"id": "table-stub-001"}
+        mock_clay.import_icp_criteria.return_value = {"ok": True}
+        mock_clay.trigger_waterfall_enrichment.return_value = {"run_id": "run-stub-001"}
+        mock_clay.get_run_status.return_value = {"status": "completed"}
+        mock_clay.fetch_enriched_contacts.return_value = {"contacts": []}  # 0 contacts
 
         # Create a campaign directly
         async def _run():
@@ -164,7 +173,8 @@ class TestClayEnrichmentPipeline:
             await s7_db.refresh(campaign)
 
             icp = {"industries": ["Automotive"], "limit": 10}
-            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)), \
+                 patch("app.tasks.outbound.get_clay_service", return_value=mock_clay):
                 result = await _enrich_contacts_pipeline_async(campaign.id, icp)
             return result, campaign.id
 
@@ -185,8 +195,15 @@ class TestHeyReachSequenceLaunch:
 
     def test_import_contacts_to_heyreach_stub(self, s7_db, s7_supplier_user):
         from app.tasks.outbound import _import_contacts_to_heyreach_async
+        from unittest.mock import MagicMock
 
         _user, supplier = s7_supplier_user
+
+        # Mock HeyReach service so no real HTTP calls are made
+        mock_heyreach = MagicMock()
+        mock_heyreach.create_campaign.return_value = {"id": "hr-campaign-stub-001"}
+        mock_heyreach.import_contacts.return_value = {"imported": 1, "contact_ids": ["hr-contact-001"]}
+        mock_heyreach.start_sequence.return_value = {"ok": True}
 
         async def _run():
             campaign = OutboundCampaign(
@@ -213,7 +230,8 @@ class TestHeyReachSequenceLaunch:
             await s7_db.commit()
             await s7_db.refresh(contact)
 
-            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)):
+            with patch("app.tasks.outbound.async_session_maker", _session_ctx_factory(s7_db)), \
+                 patch("app.tasks.outbound.get_heyreach_service", return_value=mock_heyreach):
                 result = await _import_contacts_to_heyreach_async(campaign.id)
             return result, campaign.id
 

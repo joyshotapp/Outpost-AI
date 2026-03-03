@@ -1,18 +1,9 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
-
-const NAV_ITEMS = [
-  { label: 'Dashboard', href: '/', icon: '📊' },
-  { label: 'Suppliers', href: '/suppliers', icon: '🏭' },
-  { label: 'Buyers', href: '/buyers', icon: '👤' },
-  { label: 'Content Review', href: '/content', icon: '✍️' },
-  { label: 'Outbound Health', href: '/outbound', icon: '📡' },
-  { label: 'API Usage', href: '/api-usage', icon: '⚡' },
-  { label: 'Settings', href: '/settings', icon: '⚙️' },
-]
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface KPI {
   suppliers: { total: number; active: number; verified: number }
@@ -33,24 +24,47 @@ function StatCard({ label, value, sub, accent = false }: { label: string; value:
 }
 
 export default function AdminDashboardPage() {
+  const router = useRouter()
   const [kpi, setKpi] = useState<KPI | null>(null)
   const [loading, setLoading] = useState(true)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token =
+    typeof window !== 'undefined'
+      ? (localStorage.getItem('token') || localStorage.getItem('auth_token') || localStorage.getItem('access_token'))
+      : null
 
-  const fetchKPI = useCallback(async () => {
-    setLoading(true)
-    try {
-      const res = await fetch(`${API}/admin/kpi/overview`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      if (res.ok) setKpi(await res.json())
-    } finally {
-      setLoading(false)
+  useEffect(() => {
+    const controller = new AbortController()
+
+    const fetchKPI = async () => {
+      setLoading(true)
+      try {
+        const res = await fetch(`${API}/admin/kpi/overview`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+          signal: controller.signal,
+        })
+        if (res.status === 401) {
+          localStorage.removeItem('token')
+          localStorage.removeItem('auth_token')
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('user')
+          router.replace('/login')
+          return
+        }
+        if (res.ok) setKpi(await res.json())
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return
+        setKpi(null)
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
+      }
     }
-  }, [token])
 
-  useEffect(() => { fetchKPI() }, [fetchKPI])
+    fetchKPI()
+    return () => controller.abort()
+  }, [token, router])
 
   const TIER_COLORS: Record<string, string> = {
     free: 'bg-gray-100 text-gray-600',
@@ -60,42 +74,7 @@ export default function AdminDashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <aside className="w-56 bg-white border-r border-gray-200 min-h-screen flex flex-col py-6">
-        <div className="px-6 mb-8">
-          <h1 className="text-lg font-bold text-gray-900">Factory Insider</h1>
-          <p className="text-xs text-purple-600 font-medium mt-0.5">Admin Console</p>
-        </div>
-        <nav className="flex-1 px-3 space-y-1">
-          {NAV_ITEMS.map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
-                item.label === 'Dashboard'
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <div className="px-6 pt-4 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold">A</div>
-            <div>
-              <p className="text-sm font-medium text-gray-900">Admin</p>
-              <p className="text-xs text-gray-400">Super Admin</p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <main className="flex-1 p-8">
+    <>
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-gray-900">Platform Overview</h2>
           <p className="text-gray-500 mt-1">Real-time platform KPIs and metrics</p>
@@ -154,120 +133,6 @@ export default function AdminDashboardPage() {
         ) : (
           <div className="text-center text-gray-500 py-16">Failed to load dashboard data. Make sure you are logged in as admin.</div>
         )}
-      </main>
-    </div>
-  )
-}
-
-
-      {/* Sidebar + Content */}
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen p-6">
-          <nav className="space-y-2">
-            {[
-              { label: "Dashboard", active: true },
-              { label: "Suppliers", badge: 245 },
-              { label: "Buyers", badge: 1230 },
-              { label: "RFQ Inquiries", badge: 89 },
-              { label: "Analytics" },
-              { label: "Settings" },
-            ].map((item, index) => (
-              <a
-                key={index}
-                href="#"
-                className={`block px-4 py-2 rounded-md font-medium transition-colors flex justify-between items-center ${
-                  item.active
-                    ? "bg-primary-100 text-primary-700"
-                    : "text-gray-700 hover:bg-gray-100"
-                }`}
-              >
-                {item.label}
-                {item.badge && (
-                  <span className="text-body-sm bg-primary-700 text-white px-2 py-1 rounded-full">
-                    {item.badge}
-                  </span>
-                )}
-              </a>
-            ))}
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <div className="flex-1 p-8">
-          <h1 className="text-h2 font-bold mb-6">Platform Overview</h1>
-
-          {/* KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {[
-              { label: "Total Users", value: "1,475", change: "+12%" },
-              { label: "Active Suppliers", value: "245", change: "+5%" },
-              { label: "Monthly Revenue", value: "$156,230", change: "+23%" },
-              { label: "Platform Health", value: "99.8%", change: "✓" },
-            ].map((kpi, index) => (
-              <div
-                key={index}
-                className="bg-white border border-gray-200 rounded-lg p-6"
-              >
-                <p className="text-body-sm text-gray-600 mb-2">{kpi.label}</p>
-                <p className="text-h2 font-bold text-gray-900 mb-2">{kpi.value}</p>
-                <p className={`text-body-sm font-medium ${
-                  kpi.change.includes("+") ? "text-success-700" : "text-primary-700"
-                }`}>
-                  {kpi.change}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          {/* System Status */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Services Health */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6">
-              <h2 className="text-h3 font-semibold mb-4">Services Health</h2>
-              <div className="space-y-3">
-                {[
-                  { service: "API", status: "healthy" },
-                  { service: "Database", status: "healthy" },
-                  { service: "Redis", status: "healthy" },
-                  { service: "Elasticsearch", status: "healthy" },
-                ].map((item, index) => (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center p-3 bg-gray-50 rounded"
-                  >
-                    <span className="font-medium">{item.service}</span>
-                    <span className="text-body-sm px-3 py-1 bg-success-100 text-success-700 rounded-full">
-                      {item.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recent Activity */}
-            <div className="bg-white border border-gray-200 rounded-lg p-6 lg:col-span-2">
-              <h2 className="text-h3 font-semibold mb-4">Recent Activity</h2>
-              <div className="space-y-3">
-                {[
-                  "New supplier registered: ABC Manufacturing",
-                  "RFQ inquiries exceeded 50 for the day",
-                  "Platform maintenance scheduled for 2026-03-01",
-                  "New API integration: HubSpot CRM",
-                ].map((activity, index) => (
-                  <div
-                    key={index}
-                    className="p-3 bg-gray-50 rounded border-l-4 border-primary-700"
-                  >
-                    <p className="text-body text-gray-700">{activity}</p>
-                    <p className="text-body-sm text-gray-500 mt-1">2 hours ago</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+    </>
   )
 }

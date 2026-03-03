@@ -7,6 +7,7 @@ Operates in stub mode when STRIPE_SECRET_KEY is not configured.
 from __future__ import annotations
 
 import logging
+import importlib
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -96,7 +97,7 @@ def _get_stripe():
     global _stripe
     if _stripe is None and settings.STRIPE_SECRET_KEY:
         try:
-            import stripe as _stripe_lib
+            _stripe_lib = importlib.import_module("stripe")
             _stripe_lib.api_key = settings.STRIPE_SECRET_KEY
             _stripe = _stripe_lib
             logger.info("Stripe client initialised")

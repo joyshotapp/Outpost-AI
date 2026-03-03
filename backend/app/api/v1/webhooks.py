@@ -117,7 +117,25 @@ async def heyreach_webhook(
     )
 
     # ── Dispatch to handler ──────────────────────────────────────────────────
+    # Real HeyReach event type names (as of 2026-03)
     handler = {
+        # Reply events — all treated as hot-lead signal
+        "first message reply received": _handle_lead_replied,
+        "first inmail reply received": _handle_lead_replied,
+        "every message/ inmail reply received": _handle_lead_replied,
+        # Connection events
+        "connection request accepted": _handle_connection_accepted,
+        # Sequence / campaign lifecycle
+        "campaign completed": _handle_sequence_completed,
+        # Lower-priority events — log only (no handler needed)
+        "connection request sent": None,
+        "message sent": None,
+        "inmail sent": None,
+        "follow sent": None,
+        "liked post": None,
+        "viewed profile": None,
+        "lead tag updated": None,
+        # Legacy internal names kept for backwards-compat / tests
         "lead_replied": _handle_lead_replied,
         "connection_accepted": _handle_connection_accepted,
         "connection_declined": _handle_connection_declined,

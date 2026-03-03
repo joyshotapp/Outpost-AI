@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface OutboundHealth {
   linkedin: {
@@ -54,7 +54,7 @@ export default function AdminOutboundHealthPage() {
   const [loading, setLoading] = useState(true)
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null
 
   const fetchHealth = useCallback(async () => {
     setLoading(true)
@@ -74,7 +74,7 @@ export default function AdminOutboundHealthPage() {
   useEffect(() => { fetchHealth() }, [fetchHealth])
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">

@@ -27,6 +27,9 @@ class ApolloService:
     def __init__(self):
         """Initialize Apollo service with Redis cache"""
         self.api_key = settings.APOLLO_API_KEY
+        self.stub_mode: bool = not bool(self.api_key)
+        if self.stub_mode:
+            logger.warning("APOLLO_API_KEY not set — Apollo running in stub mode (enrichment skipped)")
         self.client = httpx.AsyncClient(
             timeout=self.REQUEST_TIMEOUT,
             headers={"Content-Type": "application/json"},
@@ -62,6 +65,14 @@ class ApolloService:
             return {
                 "success": False,
                 "error": "Either company_name or domain is required",
+            }
+
+        # Stub mode — no API key
+        if self.stub_mode:
+            return {
+                "success": False,
+                "error": "stub_mode",
+                "message": "Apollo API key not configured — enrichment skipped",
             }
 
         # Check cache first

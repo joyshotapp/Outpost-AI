@@ -2,7 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from 'react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 // Defined outside the component — no state dependencies.
 function getHeaders() {
@@ -41,7 +41,7 @@ export default function KnowledgeBasePage() {
     setLoading(true)
     setMessage('')
     try {
-      const contextRes = await fetch(`${API_BASE_URL}/api/v1/knowledge-base/me`, {
+      const contextRes = await fetch(`${API_BASE_URL}/knowledge-base/me`, {
         headers: getHeaders(),
       })
       if (!contextRes.ok) {
@@ -52,7 +52,7 @@ export default function KnowledgeBasePage() {
       setNamespace(contextData.namespace)
 
       const docsRes = await fetch(
-        `${API_BASE_URL}/api/v1/knowledge-base/documents?supplier_id=${contextData.supplier_id}`,
+        `${API_BASE_URL}/knowledge-base/documents?supplier_id=${contextData.supplier_id}`,
         { headers: getHeaders() }
       )
       if (!docsRes.ok) {
@@ -77,7 +77,7 @@ export default function KnowledgeBasePage() {
     }
     setMessage('')
     const res = await fetch(
-      `${API_BASE_URL}/api/v1/knowledge-base/suppliers/${supplierId}/namespace/init`,
+      `${API_BASE_URL}/knowledge-base/suppliers/${supplierId}/namespace/init`,
       { method: 'POST', headers: getHeaders() }
     )
     if (!res.ok) {
@@ -105,7 +105,7 @@ export default function KnowledgeBasePage() {
       source_s3_key: sourceS3Key || null,
     }
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/knowledge-base/documents`, {
+    const res = await fetch(`${API_BASE_URL}/knowledge-base/documents`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(payload),

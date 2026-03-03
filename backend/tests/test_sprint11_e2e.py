@@ -645,6 +645,7 @@ class TestAdminSettings:
     @pytest.mark.asyncio
     async def test_upsert_new_setting(self):
         from app.api.v1.admin import SystemSettingUpsertRequest, admin_upsert_setting
+        from app.models.system_setting import SystemSetting
         from sqlalchemy.ext.asyncio import AsyncSession
 
         db = AsyncMock(spec=AsyncSession)
@@ -654,15 +655,14 @@ class TestAdminSettings:
         db.add = MagicMock()
         db.commit = AsyncMock()
 
-        with patch("app.api.v1.admin.SystemSetting") as MockSystemSetting:
-            mock_instance = MagicMock()
-            mock_instance.key = "test.key"
-            mock_instance.value = "test_value"
-            MockSystemSetting.return_value = mock_instance
+        body = SystemSettingUpsertRequest(key="test.key", value="test_value")
+        result = await admin_upsert_setting(body, _make_user("admin"), db)
 
-            body = SystemSettingUpsertRequest(key="test.key", value="test_value")
-            result = await admin_upsert_setting(body, _make_user("admin"), db)
+        db.add.assert_called_once()
+        created_setting = db.add.call_args.args[0]
+        assert isinstance(created_setting, SystemSetting)
         assert result["key"] == "test.key"
+        assert result["value"] == "test_value"
 
     @pytest.mark.asyncio
     async def test_delete_setting_not_found(self):

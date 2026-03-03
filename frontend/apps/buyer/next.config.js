@@ -6,7 +6,7 @@ const nextConfig = {
   i18n: {
     locales: ['en', 'zh', 'de', 'ja', 'es'],
     defaultLocale: 'en',
-    localeDetection: true,
+    localeDetection: false,
   },
   images: {
     unoptimized: false,
@@ -41,6 +41,16 @@ const nextConfig = {
         ],
       },
     ]
+  },
+  rewrites: async () => {
+    return {
+      beforeFiles: [
+        {
+          source: '/api/:path*',
+          destination: 'http://localhost:8001/api/:path*',
+        },
+      ],
+    }
   },
 }
 

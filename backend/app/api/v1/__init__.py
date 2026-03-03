@@ -17,6 +17,9 @@ from app.api.v1.webhooks import router as webhooks_router
 from app.api.v1.search import router as search_router
 from app.api.v1.messages import router as messages_router
 from app.api.v1.billing import router as billing_router
+from app.api.v1.analytics import router as analytics_router
+from app.api.v1.exhibitions import router as exhibitions_router
+from app.api.v1.business_cards import router as business_cards_router
 
 router = APIRouter(prefix="/api/v1", tags=["v1"])
 
@@ -36,6 +39,9 @@ router.include_router(webhooks_router)
 router.include_router(search_router)
 router.include_router(messages_router)
 router.include_router(billing_router)
+router.include_router(analytics_router)
+router.include_router(exhibitions_router)
+router.include_router(business_cards_router)
 
 
 @router.get("/health")

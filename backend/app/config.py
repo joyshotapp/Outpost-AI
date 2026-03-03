@@ -54,7 +54,7 @@ class Settings(BaseSettings):
 
     # API Keys
     ANTHROPIC_API_KEY: Optional[str] = os.getenv("ANTHROPIC_API_KEY")
-    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-3-5-sonnet-latest")
+    ANTHROPIC_MODEL: str = os.getenv("ANTHROPIC_MODEL", "claude-3-haiku-20240307")
     HEYGEN_API_KEY: Optional[str] = os.getenv("HEYGEN_API_KEY")
     # HeyGen billing: $0.08 per minute of source video (adjust to match your plan)
     HEYGEN_COST_PER_MINUTE_USD: float = float(os.getenv("HEYGEN_COST_PER_MINUTE_USD", "0.08"))

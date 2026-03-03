@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface Buyer {
   id: number
@@ -22,7 +22,7 @@ export default function AdminBuyersPage() {
   const [filterActive, setFilterActive] = useState<boolean | null>(null)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null
 
   const fetchBuyers = useCallback(async () => {
     setLoading(true)
@@ -59,7 +59,7 @@ export default function AdminBuyersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-6">

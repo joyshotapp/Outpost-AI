@@ -1,6 +1,6 @@
 # Factory Insider Platform — 完整開發計畫與 Task Plan
 
-> 版本：v1.1 | 建立：2026-02-28 | **最後更新：2026-03-01**
+> 版本：v1.2 | 建立：2026-02-28 | **最後更新：2026-03-03**
 > 配套文件：`docs/technical_architecture.md`
 
 > **狀態圖例**：✅ 已完成 ｜ ⚠️ 待驗證（代碼存在，驗收標準未跑）｜ ❓ 狀態不明 ｜ 🔲 未開始
@@ -51,7 +51,7 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 
 ## 4. 完整 Task Plan（按 Sprint 展開）
 
-### 進度儀表板（最後更新：2026-03-01）
+### 進度儀表板（最後更新：2026-03-03）
 
 | Sprint | 週期 | 主題 | 整體狀態 | 完成 Tasks | 備註 |
 |--------|------|------|---------|-----------|------|
@@ -64,13 +64,13 @@ Month 7:  Sprint 13-14── 整合測試 + 效能優化 + 上線準備
 | Sprint 7 | Week 13-14 | Outbound — LinkedIn | � 工程關版 | 10/10 ✅ | Clay/HeyReach stub 完成；實網金鑰上位後進行流量驗證 |
 | Sprint 8 | Week 15-16 | Outbound — Email | � 工程關版 | 10/10 | ✅ 2024-01 完成 |
 | Sprint 9 | Week 17-18 | 內容裂變矩陣 | � 工程關版 | 10/10 | be914c2 基底，Sprint 9 commit |
-| Sprint 10 | Week 19-20 | 搜尋系統 + 買家前台 | 🔲 未開始 | 0/10 | — |
+| Sprint 10 | Week 19-20 | 搜尋系統 + 買家前台 | ✅ 工程關版 | 10/10 ✅ | ES 全文搜尋 + 買家前台 6 頁 + i18n × 5 語言 + 訊息系統，54 tests 全綠（bfcae48） |
 | Sprint 11 | Week 21-22 | 訂閱計費 + 管理後台 | � 工程關版 | 10/10 ✅ | Stripe stub 模式 + 完整管理後台 |
-| Sprint 12 | Week 23-24 | 進階功能 + KPI 儀表板 | 🔲 未開始 | 0/8 | — |
+| Sprint 12 | Week 23-24 | 進階功能 + KPI 儀表板 | � 工程關版 | 8/8 ✅ | KPI 儀表板 + 展覽管理 + 名片 OCR + 再行銷 + Email Nurturing + 資料匯出 + Mobile 響應式 |
 | Sprint 13 | Week 25-26 | 整合測試 + 效能優化 | 🔲 未開始 | 0/10 | — |
 | Sprint 14 | Week 27-28 | 上線準備 + 正式發布 | 🔲 未開始 | 0/10 | — |
 
-**當前進度**：Sprint 5 已達工程關版（可程式化範圍 100%）；Sprint 6 已工程關版（8/8 完成）：HeyGen service、多語影片 Celery pipeline、德語壓縮、VLV 狀態欄位 + migration、localization-status API、前端語言狀態面板、公開頁語言切換器、CDN URL helper、HeyGen 費用追蹤 (model + admin API)、Code Review 高風險修復（admin RBAC、skipped 成本歸零、polling 狀態落庫、cdn_url 寫入）完成，E2E/回歸測試 38 tests green。待 HeyGen 實網金鑰上位後進行流量驗證。
+**當前進度（2026-03-03）**：Sprint 12/14 工程關版。S1-S12 所有代碼已完成；Sprint 12 進階功能（展覽管理、名片 OCR、再行銷序列、Email Nurturing）、供應商儀表板 UI（Skeleton/EmptyState 元件、ApiError 錯誤處理、Auth Guard）均已交付並穩定。S13-S14 整合測試 + 部署上線排程中。第三方 API 金鑰（HeyGen / Clay / HeyReach / Pinecone / RB2B）上位後可進行流量驗證。
 
 ### Sprint 1-5 外部資源依賴與驗收矩陣（單一入口）
 
@@ -490,20 +490,20 @@ python backend/scripts/sprint5_live_validation.py --supplier-id <SUPPLIER_ID> --
 
 ---
 
-### Sprint 12（Week 23-24）：進階功能 + 分析儀表板 — 🔲 未開始
+### Sprint 12（Week 23-24）：進階功能 + 分析儀表板 — � 工程關版
 
 > 目標：供應商 KPI 儀表板、展覽整合、名片揃描、再行銷序列
 
 | # | Task | 負責 | 天數 | 前置 | 驗收標準 | 狀態 |
 |---|------|------|------|------|---------|------|
-| 12.1 | 供應商 KPI 儀表板（線上系統指標 + 業務成交指標） | FE-2 + BE-1 | 5 | 全部前置完成 | Recharts 圖表：RFQ 趨勢、Lead Score 分佈、訪客趨勢、Outbound 成效、內容觸及率 | 🔲 |
-| 12.2 | 展覽活動管理模組（展前 ICP 名單 + 展中名片揃描 + 展後序列） | BE-1 + FE-2 | 5 | 8.5 | 支援展覽生命週期管理 | 🔲 |
-| 12.3 | 名片揃描 OCR（手機拍照 → Claude Vision → 結構化聯絡人） | AI-1 + FE-1 | 3 | 3.2 | 拍照名片 → 自動建立 CRM 聯絡人 | 🔲 |
-| 12.4 | 再行銷序列（90 天後 C 級重新評分、B 級 30 天後進入自動序列） | BE-1 | 3 | 8.5 | Celery Beat 排程定期重新評分 + 觸發序列 | 🔲 |
-| 12.5 | Email Nurturing 序列（C 級每月 1 封產業洞察信） | AI-1 + INT-1 | 3 | 8.1 | 自動生成 + 排程發送月度電子報 | 🔲 |
-| 12.6 | 資料匯出 API（CSV/JSON 格式匯出線索/RFQ/分析數據） | BE-1 | 2 | - | 供應商可匯出所有業務數據 | 🔲 |
-| 12.7 | 行動裝置響應式優化（所有頁面 Mobile/Tablet 適配） | FE-1 + FE-2 | 4 | - | 所有頁面在 375px~1920px 正常顯示 | 🔲 |
-| 12.8 | 進階功能 E2E 測試 | QA-1 | 3 | 12.1~12.7 | 所有新功能測試通過 | 🔲 |
+| 12.1 | 供應商 KPI 儀表板（線上系統指標 + 業務成交指標） | FE-2 + BE-1 | 5 | 全部前置完成 | Recharts 圖表：RFQ 趨勢、Lead Score 分佈、訪客趨勢、Outbound 成效、內容觸及率 | ✅ |
+| 12.2 | 展覽活動管理模組（展前 ICP 名單 + 展中名片揃描 + 展後序列） | BE-1 + FE-2 | 5 | 8.5 | 支援展覽生命週期管理 | ✅ |
+| 12.3 | 名片揃描 OCR（手機拍照 → Claude Vision → 結構化聯絡人） | AI-1 + FE-1 | 3 | 3.2 | 拍照名片 → 自動建立 CRM 聯絡人 | ✅ |
+| 12.4 | 再行銷序列（90 天後 C 級重新評分、B 級 30 天後進入自動序列） | BE-1 | 3 | 8.5 | Celery Beat 排程定期重新評分 + 觸發序列 | ✅ |
+| 12.5 | Email Nurturing 序列（C 級每月 1 封產業洞察信） | AI-1 + INT-1 | 3 | 8.1 | 自動生成 + 排程發送月度電子報 | ✅ |
+| 12.6 | 資料匯出 API（CSV/JSON 格式匯出線索/RFQ/分析數據） | BE-1 | 2 | - | 供應商可匯出所有業務數據 | ✅ |
+| 12.7 | 行動裝置響應式優化（所有頁面 Mobile/Tablet 適配） | FE-1 + FE-2 | 4 | - | 所有頁面在 375px~1920px 正常顯示 | ✅ |
+| 12.8 | 進階功能 E2E 測試 | QA-1 | 3 | 12.1~12.7 | 所有新功能測試通過 | ✅ |
 
 **Sprint 12 交付物**：
 - 完整 KPI 儀表板

@@ -380,7 +380,7 @@ export function RFQForm({ onSubmit, loading = false }: RFQFormProps) {
                   type="checkbox"
                   checked={formData.specifications.certifications?.includes(cert.value) || false}
                   onChange={e => {
-                    const certs = formData.specifications.certifications?.split(',') || []
+                    let certs = formData.specifications.certifications?.split(',') || []
                     if (e.target.checked) {
                       certs.push(cert.value)
                     } else {

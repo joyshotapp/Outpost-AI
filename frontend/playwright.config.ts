@@ -1,49 +1,100 @@
 import { defineConfig, devices } from '@playwright/test';
 
+/**
+ * Factory Insider — E2E Test Configuration
+ *
+ * Three apps under test:
+ *   Buyer    → http://localhost:3004
+ *   Supplier → http://localhost:3001
+ *   Admin    → http://localhost:3002
+ *   Backend  → http://localhost:8001
+ */
 export default defineConfig({
-  testDir: './apps/*/tests/e2e',
+  testDir: './tests/e2e',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
+  timeout: 30_000,
+  expect: { timeout: 8_000 },
+  globalSetup: './tests/e2e/global-setup.ts',
   reporter: [
     ['html'],
     ['json', { outputFile: 'test-results/results.json' }],
-    ['junit', { outputFile: 'test-results/junit.xml' }]
+    ['list'],
   ],
 
   use: {
-    baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure'
+    video: 'retain-on-failure',
+    actionTimeout: 10_000,
   },
 
-  webServer: [
-    {
-      command: 'npm run dev',
-      url: 'http://localhost:3000',
-      reuseExistingServer: !process.env.CI,
-      timeout: 120000
-    }
-  ],
+  /* Don't auto-start servers — they are already running */
 
   projects: [
+    /* ── Supplier App ─────────────────────────────────── */
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] }
+      name: 'supplier',
+      testDir: './tests/e2e/supplier',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3001',
+      },
+    },
+    /* ── Admin App ────────────────────────────────────── */
+    {
+      name: 'admin',
+      testDir: './tests/e2e/admin',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3002',
+      },
+    },
+    /* ── Buyer App ────────────────────────────────────── */
+    {
+      name: 'buyer',
+      testDir: './tests/e2e/buyer',
+      use: {
+        ...devices['Desktop Chrome'],
+        baseURL: 'http://localhost:3004',
+      },
+    },
+    /* ── Cross-browser smoke suites ──────────────────── */
+    {
+      name: 'smoke-firefox',
+      testDir: './tests/e2e/smoke',
+      testMatch: '**/cross-browser.spec.ts',
+      use: {
+        ...devices['Desktop Firefox'],
+      },
     },
     {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] }
+      name: 'smoke-webkit',
+      testDir: './tests/e2e/smoke',
+      testMatch: '**/cross-browser.spec.ts',
+      use: {
+        ...devices['Desktop Safari'],
+      },
     },
+    /* ── Mobile viewport smoke suite ─────────────────── */
     {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] }
+      name: 'smoke-mobile',
+      testDir: './tests/e2e/smoke',
+      testMatch: '**/mobile.spec.ts',
+      use: {
+        ...devices['Pixel 5'],
+      },
     },
+    /* ── Accessibility quick scan suite ──────────────── */
     {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] }
-    }
-  ]
+      name: 'smoke-a11y',
+      testDir: './tests/e2e/smoke',
+      testMatch: '**/a11y.spec.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+  ],
 });

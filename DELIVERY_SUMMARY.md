@@ -1,31 +1,79 @@
 # Factory Insider Platform — 交付總結
 
-> 日期：2026-02-28
-> 狀態：✅ 完全就緒
+> 日期：2026-03-03
+> 狀態：✅ Sprint 12/14 完成 — 持續開發中
 
 ---
 
-## 🆕 最新更新（2026-03-01）
+## 🆕 最新更新（2026-03-03）
 
-### Sprint 7 正式交付已上線
-- **主提交**：`919ed2a`（Sprint 7 complete）
-- **內容涵蓋**：Outbound 全鏈路（Clay + HeyReach + LinkedIn）
-   - DB Migration + Models
-   - Clay / HeyReach Service Layer
-   - Celery Pipeline（enrich / opener / import / safety / reset）
-   - Outbound + Webhook API
-   - Supplier Outbound 4 個頁面 UI
-   - Sprint 7 E2E 測試
+### Sprint 12 進階功能 + 前端 UI 穩定化
+- **Alembic Migration**：`013_sprint12_advanced_features.py`
+  - 新增 4 張資料表：`exhibitions`, `business_cards`, `remarketing_sequences`, `nurture_sequences`
+  - 展覽管理（攤位 + ICP 條件 + 聯絡人計數）
+  - 名片 OCR（Claude Vision 解析 + CRM 轉換）
+  - 再行銷序列（C 級 lead 90 天回訪）
+  - Email Nurturing（每月見解郵件 + 退訂機制）
 
-### Post-Sprint 7 Debug 穩定化
-- **修復提交**：`e3e532a`（fix(testing): stabilize backend test infra and post-sprint7 regressions）
-- **修復重點**：
-   - 測試環境 Celery eager 化，移除外部 broker 依賴
-   - SQLite 測試 fixture 穩定化（`StaticPool`）
-   - Outbound queue 呼叫韌性強化（broker 不可用時 graceful degrade）
-   - Uploads 路由與 Supplier schema 型別一致性修正
-   - 多組測試 patch 策略統一（assert `.delay`）
-- **驗證結果**：`backend pytest` 全量通過：**241 passed, 2 skipped**
+### 供應商後台 Dashboard 完整 UI 交付
+- **新 UI 元件**：`Skeleton.tsx`（SkeletonCard, SkeletonChart, SkeletonTable）、`EmptyState.tsx`
+- **`lib/api.ts`**：緊湊型 API Helper，含 `ApiError` class、節流式錯誤日誌（8s 間隔）、友善中文 401 提示
+- **儀表板**：KPI 卡片 + RFQ 趨勢圖，使用真實 `/api/v1/analytics/kpi` 與 `/api/v1/analytics/rfq-trend`
+- **分析頁面**：6 個圖表區塊，連接真實 analytics endpoints，含 CSV 匯出功能
+
+### 後端 Analytics API Bug Fixes
+- **Bug 1**（500 錯誤）：`_window_start()` timezone aware/naive 不匹配 → 改為 `datetime.utcnow()` naive UTC
+- **Bug 2**（AttributeError）：`ContentItem.total_reach` / `total_engagement` 不存在 → 修正為 `ContentItem.impressions` / `engagements`（影響 `analytics/kpi` + `analytics/content-reach`）
+
+### Auth Guard + 401 處理全面強化
+- **Supplier Layout**：mount 時檢查 localStorage token，無 token 立即 redirect `/login`
+- **Supplier/Admin Dashboard**：catch `ApiError(status=401)` → 清除三組 token key → `router.replace('/login')`
+- **Admin Shell**：`getToken()` 支援 `auth_token | token | access_token` 三種 key；logout 全清
+
+### 前端錯誤修復
+- **SkeletonChart hydration 警告**：移除 `Math.random()` bar 高度，改用 20 個固定值陣列
+- **Admin Page unhandled promise**：`useEffect` 內 `AbortController` + try/catch，`AbortError` 靜默忽略
+- **Favicon 404**：為 Supplier (3001) + Buyer (3004) 新增 `public/favicon.ico`
+
+### 測試帳號
+| 角色 | Email | 密碼 |
+|------|-------|------|
+| 供應商 | `test@factory.com` | `Test1234!` |
+| 管理員 | `admin@factory.com` | `Admin1234!` |
+
+---
+
+## 📝 歷史更新紀錄
+
+### Sprint 11（2026-03-02）
+- **主提交**：`5195b8e`（feat: Sprint 11 — Stripe billing + feature gate + admin portal + tests）
+- Stripe Stub 模式訂閱計費（Checkout Session + Webhook + 方案降級）
+- Feature Gate 權限管控（Starter/Professional/Enterprise）
+- 管理後台 7 個頁面完整實作（供應商管理、買家管理、內容審核、Outbound 監控、API 用量、設定）
+- 帳務 API 8 端點 + Admin KPI Overview API
+- 10/10 Tests 全綠
+
+### Sprint 10（2026-03-01）
+- **主提交**：`bfcae48`（feat(sprint10): search+buyer-frontend）
+- Elasticsearch 全文搜尋服務（供應商 + 影片 + 商品）
+- 站內訊息系統（Message + Thread API）
+- 買家前台 6 個頁面（首頁、搜尋、供應商詳情、RFQ 追蹤、訊息中心）
+- next-intl 5 語言 i18n（EN/ZH/DE/JA/ES）
+- SEO 完整 metadata + sitemap
+- 54 tests 全綠
+
+### Sprint 9（2026-02-28）
+- **主提交**：`5a50936`（feat(sprint9): content viral matrix）
+- 內容裂變 Pipeline：OpusClip（短影音剪輯）+ Repurpose.io（跨平台分發）+ Claude（文章生成）
+- 4 個供應商 UI 頁面（內容列表、裂變狀態、排程管理、成效追蹤）
+- 11 個 API 端點（含 Celery 非同步觸發）
+- 35/35 tests 全綠
+
+### Sprint 7-8（2026-02-24）
+- **Sprint 7**：`919ed2a`（Outbound LinkedIn — Clay + HeyReach 全鏈路）
+- **Sprint 8**：`05fd700`（Email Outreach — Instantly + Unified Lead Pipeline）
+- **穩定化修復**：`e3e532a`（測試基礎設施、Celery eager 化、SQLite StaticPool）
+- **驗證結果**：241 passed, 2 skipped
 
 ---
 
@@ -329,27 +377,37 @@ docs/                      (文件中心)
 
 ## 🚀 立即行動清單
 
-### ✅ 已完成
-- [x] 技術架構設計（完整 969 行文件）
+### ✅ 已完成（Sprint 1-12）
+- [x] 技術架構設計（完整技術文件）
 - [x] 開發計畫設計（14 Sprint + 140+ Task）
-- [x] 目錄結構建立（122 子目錄）
-- [x] 環境配置模板（.env.example）
-- [x] Docker 開發環境（docker-compose.yml）
-- [x] 專案文件（README + QUICKSTART + CLAUDE.md）
+- [x] Docker 開發環境（docker-compose.yml — 4 個服務）
+- [x] FastAPI 後端（20+ API 端點）
+- [x] 供應商後台（Next.js — 儀表板/分析/影片/知識庫/RFQ/Outbound/內容）
+- [x] 買家前台（Next.js — 6 頁面 + 5 語言 i18n）
+- [x] 管理後台（Next.js — 7 頁面 + KPI 總覽）
+- [x] AI 核心功能（RFQ 解析 + Lead Scoring + RAG 分身）
+- [x] 訪客意圖分析（RB2B + Leadfeeder + Clay 富化）
+- [x] 多語系影片（HeyGen + Celery Pipeline）
+- [x] Outbound 引擎（Clay → HeyReach LinkedIn + Instantly Email）
+- [x] 內容裂變矩陣（OpusClip + Repurpose + Claude）
+- [x] 搜尋系統（Elasticsearch 全文搜尋）
+- [x] 訂閱計費（Stripe Stub + Feature Gate）
+- [x] 進階功能（展覽管理 + 名片 OCR + 再行銷 + Email Nurturing）
+- [x] 測試帳號建立（admin@factory.com / test@factory.com）
 
-### ⏳ 立即啟動（Week 1）
-- [ ] 複製 `.env.example` → `.env.local`
-- [ ] 申請第三方 API Keys（優先：Claude + HeyGen + Pinecone + Clay + Apollo）
-- [ ] `docker-compose up -d` 啟動本地環境
-- [ ] 建立 Git 遠程倉庫
-- [ ] 團隊 Kick-off 會議
-- [ ] 分配 Sprint 1 Tasks
+### ⏳ 剩餘工作（Sprint 13-14）
+- [ ] S13：全系統整合測試 + E2E 自動化（Playwright）
+- [ ] S13：效能優化（API P95 < 500ms、LCP < 3s）
+- [ ] S14：AWS 部署 + CI/CD Pipeline + Staging 驗收
+- [ ] S14：第三方 API 金鑰上位（HeyGen / Clay / HeyReach / Pinecone）
+- [ ] S14：安全審計 + GDPR 合規 Law Review
+- [ ] S14：Beta 測試（首批 5 家供應商）
 
-### 🔄 持續進行（Week 2-28）
-- [ ] 執行 14 個 Sprint（按開發計畫）
-- [ ] 每 Sprint 交付可展示成果
-- [ ] 每月進行 Go/No-Go 檢查點
-- [ ] 持續填充代碼實現
+### 🔄 外部驗收待辦
+- [ ] HeyGen 金鑰：多語系影片流量驗證
+- [ ] Clay + HeyReach 金鑰：Outbound LinkedIn 流量驗證
+- [ ] RB2B + Leadfeeder：訪客識別實網驗證
+- [ ] Stripe 生產金鑰：訂閱計費正式啟用
 
 ---
 
@@ -445,34 +503,40 @@ docs/                      (文件中心)
 
 ## 🏁 總結
 
-### ✨ 已交付
-- **完整技術設計**：1,507 行技術文檔
-- **詳細執行計畫**：14 Sprint, 140+ Task，每項都有驗收標準
-- **完整目錄結構**：122 個子目錄，按功能模組組織
-- **開發框架**：Docker + GitHub Actions + Terraform 完整配置
-- **最佳實踐**：CLAUDE.md 規範，確保「按計畫、用真實、完整交付」
+### ✨ 已交付（Sprint 1-12）
+- **後端 API**：20+ REST 端點，完整 Celery 非同步 Pipeline，13 張 DB 表 + Sprint 12 新增 4 張
+- **前端三端**：買家前台（6 頁面）、供應商後台（10+ 頁面）、管理後台（7 頁面）
+- **AI 六大亮點**：全部代碼化完成（RFQ 解析 / 分身 / 訪客意圖 / 多語系影片 / 內容裂變 / Lead Scoring）
+- **Outbound 引擎**：Clay + HeyReach LinkedIn + Instantly Email 完整序列
+- **訂閱計費**：Stripe Stub + Feature Gate + 帳務 API
+- **測試覆蓋**：後端 pytest 全綠（200+ tests）
+- **文件**：技術架構 + 開發計畫 + API 文件完整
 
-### 🎯 價值提供
-- 新團隊 Onboarding 時間從 4 週縮短到 3 天
-- 架構決策已預先驗證，減少重做風險
-- 每個 Task 的驗收標準明確，工作可量化
-- 冷啟動問題已識別，有緩解方案
-- 第三方 API 整合點已預留，無需重構
+### 🎯 尚餘工作（Sprint 13-14）
+- 全系統 E2E 自動化測試（Playwright）
+- AWS 生產環境部署 + CI/CD
+- 第三方 API 金鑰實網驗證
+- Beta 用戶測試
 
 ### 🚀 就緒狀態
-✅ **可立即啟動開發**
+✅ **本地開發環境可立即啟動**
 
-1. 分配人力
-2. 申請 API Keys
-3. 啟動 Docker 環境
-4. 執行 Sprint 1 Tasks
+```bash
+# 啟動後端
+docker-compose up -d db redis elasticsearch backend
 
-預估 7 個月後上線（2026-09-28）
+# 啟動前端（三個終端）
+cd frontend/apps/supplier && npm run dev  # → http://localhost:3001
+cd frontend/apps/admin    && npm run dev  # → http://localhost:3002
+cd frontend/apps/buyer    && npm run dev  # → http://localhost:3004
+```
+
+**登入帳號**：供應商 `test@factory.com / Test1234!`　｜　管理員 `admin@factory.com / Admin1234!`
+
+預估 Sprint 13-14 完成後（2026-07）正式上線
 
 ---
 
-**交付日期**：2026-02-28
-**交付狀態**：✅ 完全就緒
-**下一步**：`docker-compose up -d`
-
-祝開發順利！🚀
+**最後更新**：2026-03-03
+**交付狀態**：✅ Sprint 12/14 完成
+**下一步**：Sprint 13 整合測試 + 效能優化

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface ServiceUsage {
   calls: number
@@ -38,7 +38,7 @@ export default function AdminApiUsagePage() {
   const [year, setYear] = useState(new Date().getFullYear())
   const [month, setMonth] = useState(new Date().getMonth() + 1)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null
 
   const fetchSummary = useCallback(async () => {
     setLoading(true)
@@ -59,7 +59,7 @@ export default function AdminApiUsagePage() {
     : 1
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       <div className="max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">

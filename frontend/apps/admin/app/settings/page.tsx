@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface Setting {
   key: string
@@ -33,7 +33,7 @@ export default function AdminSettingsPage() {
   const [showAddForm, setShowAddForm] = useState(false)
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null
 
   const fetchSettings = useCallback(async () => {
     setLoading(true)
@@ -106,7 +106,7 @@ export default function AdminSettingsPage() {
   const missingPresets = PRESET_KEYS.filter((p) => !settingKeys.has(p.key))
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">

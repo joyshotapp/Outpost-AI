@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 const AUTO_REFRESH_MS = 60_000
 
 interface VisitorSummary {
@@ -60,13 +60,13 @@ export default function VisitorIntentPage() {
     setError('')
     try {
       const eventsUrl = levelFilter !== 'all'
-        ? `${API_BASE_URL}/api/v1/visitor-intent/events?limit=50&level=${levelFilter}`
-        : `${API_BASE_URL}/api/v1/visitor-intent/events?limit=50`
+        ? `${API_BASE_URL}/visitor-intent/events?limit=50&level=${levelFilter}`
+        : `${API_BASE_URL}/visitor-intent/events?limit=50`
 
       const [summaryRes, eventsRes, opsRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/v1/visitor-intent/summary`, { headers: getHeaders() }),
+        fetch(`${API_BASE_URL}/visitor-intent/summary`, { headers: getHeaders() }),
         fetch(eventsUrl, { headers: getHeaders() }),
-        fetch(`${API_BASE_URL}/api/v1/visitor-intent/ops-metrics?hours=24`, { headers: getHeaders() }),
+        fetch(`${API_BASE_URL}/visitor-intent/ops-metrics?hours=24`, { headers: getHeaders() }),
       ])
 
       if (!summaryRes.ok || !eventsRes.ok) {

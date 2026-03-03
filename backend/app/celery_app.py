@@ -64,6 +64,23 @@ celery_app.conf.update(
             "task": "app.tasks.outbound.enforce_linkedin_safety",
             "schedule": 3600.0,  # Hourly safety check (requires campaign_id; use signals in production)
         },
+        # ── Sprint 12: Remarketing & Nurture ─────────────────────────────────
+        "rescore-c-grade-leads-90d": {
+            "task": "app.tasks.remarketing.rescore_c_grade_leads",
+            "schedule": 86400.0,  # Daily at midnight UTC
+        },
+        "enrol-b-grade-nurture-30d": {
+            "task": "app.tasks.remarketing.enrol_b_grade_nurture",
+            "schedule": 86400.0,  # Daily at 02:00 UTC
+        },
+        "advance-remarketing-sequences": {
+            "task": "app.tasks.remarketing.advance_remarketing_sequences",
+            "schedule": 3600.0,  # Every hour
+        },
+        "send-monthly-nurture-emails": {
+            "task": "app.tasks.nurture.send_monthly_nurture_emails",
+            "schedule": 86400.0,  # Daily
+        },
     },
 )
 

@@ -199,8 +199,7 @@ class TestVideoCreation:
             await test_db.refresh(other_supplier)
             return other_supplier
 
-        loop = asyncio.get_event_loop()
-        other_supplier = loop.run_until_complete(create_other_supplier())
+        other_supplier = asyncio.run(create_other_supplier())
 
         response = client.post(
             "/api/v1/videos",
@@ -386,8 +385,7 @@ class TestVideoUpdate:
             await test_db.refresh(video)
             return video
 
-        loop = asyncio.get_event_loop()
-        other_video = loop.run_until_complete(create_other_video())
+        other_video = asyncio.run(create_other_video())
 
         response = client.put(
             f"/api/v1/videos/{other_video.id}",

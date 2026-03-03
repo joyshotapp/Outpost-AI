@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { io, Socket } from 'socket.io-client'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface HeaderProps {
   sidebarOpen: boolean
@@ -30,7 +30,7 @@ export default function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
 
     const fetchUnreadCount = async () => {
       try {
-        const response = await fetch(`${API_BASE_URL}/api/v1/notifications?unread_only=true&limit=100`, {
+        const response = await fetch(`${API_BASE_URL}/notifications?unread_only=true&limit=100`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -49,7 +49,7 @@ export default function Header({ sidebarOpen, onToggleSidebar }: HeaderProps) {
 
     const setupSocket = async () => {
       try {
-        const summaryResponse = await fetch(`${API_BASE_URL}/api/v1/visitor-intent/summary`, {
+        const summaryResponse = await fetch(`${API_BASE_URL}/visitor-intent/summary`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

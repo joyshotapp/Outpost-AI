@@ -9,7 +9,8 @@
     ".": {
       "types": "./index.ts",
       "default": "./index.ts"
-    }
+    },
+    "./globals.css": "./globals.css"
   },
   "scripts": {
     "lint": "eslint . --ext .ts,.tsx"

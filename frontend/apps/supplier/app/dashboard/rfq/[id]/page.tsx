@@ -24,7 +24,7 @@ interface RFQDetail {
   updated_at: string
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 const GRADE_COLORS = {
   A: { bg: 'bg-green-100', text: 'text-green-800' },
@@ -53,7 +53,7 @@ export default function RFQDetailPage({ params }: { params: { id: string } }) {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/rfqs/${params.id}`, { headers })
+        const response = await fetch(`${API_BASE_URL}/rfqs/${params.id}`, { headers })
         if (!response.ok) {
           throw new Error(`Failed to fetch RFQ: ${response.statusText}`)
         }
@@ -88,7 +88,7 @@ export default function RFQDetailPage({ params }: { params: { id: string } }) {
       }
 
       // Persist the edited reply to the backend
-      await fetch(`${API_BASE_URL}/api/v1/rfqs/${params.id}`, {
+      await fetch(`${API_BASE_URL}/rfqs/${params.id}`, {
         method: 'PATCH',
         headers,
         body: JSON.stringify({ draft_reply: editedReply }),
@@ -146,6 +146,15 @@ export default function RFQDetailPage({ params }: { params: { id: string } }) {
       // ignore parse errors
     }
   }
+
+  const parsedMaterials = parsedData.materials
+  const parsedCertifications = parsedData.certifications
+  const hasParsedMaterials = Array.isArray(parsedMaterials)
+    ? parsedMaterials.length > 0
+    : Boolean(parsedMaterials)
+  const hasParsedCertifications = Array.isArray(parsedCertifications)
+    ? parsedCertifications.length > 0
+    : Boolean(parsedCertifications)
 
   return (
     <main className="flex-1">
@@ -337,23 +346,23 @@ export default function RFQDetailPage({ params }: { params: { id: string } }) {
               {/* Parsed specifications from AI */}
               {Object.keys(parsedData).length > 0 && (
                 <div className="space-y-3 mb-4 pb-4 border-b border-gray-200">
-                  {parsedData.materials && (
+                  {hasParsedMaterials && (
                     <div>
                       <p className="text-xs text-gray-600 uppercase font-semibold">Material</p>
                       <p className="text-sm text-gray-900 mt-1">
-                        {Array.isArray(parsedData.materials)
-                          ? (parsedData.materials as string[]).join(', ')
-                          : String(parsedData.materials)}
+                        {Array.isArray(parsedMaterials)
+                          ? parsedMaterials.map((material) => String(material)).join(', ')
+                          : String(parsedMaterials)}
                       </p>
                     </div>
                   )}
-                  {parsedData.certifications && (
+                  {hasParsedCertifications && (
                     <div>
                       <p className="text-xs text-gray-600 uppercase font-semibold mb-1">Certifications</p>
                       <div className="flex flex-wrap gap-2">
-                        {(Array.isArray(parsedData.certifications)
-                          ? parsedData.certifications
-                          : [parsedData.certifications]
+                        {(Array.isArray(parsedCertifications)
+                          ? parsedCertifications
+                          : [parsedCertifications]
                         ).map((cert: unknown, i: number) => (
                           <span
                             key={i}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api/v1'
 
 interface Supplier {
   id: number
@@ -35,7 +35,7 @@ export default function AdminSuppliersPage() {
   const [filterTier, setFilterTier] = useState('')
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('token') || localStorage.getItem('auth_token')) : null
 
   const fetchSuppliers = useCallback(async () => {
     setLoading(true)
@@ -88,7 +88,7 @@ export default function AdminSuppliersPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-start mb-6">

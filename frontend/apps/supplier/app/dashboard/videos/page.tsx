@@ -22,6 +22,15 @@ interface Video {
   }>
 }
 
+interface VideoRecord {
+  id: number
+  title: string
+  video_type: string | null
+  thumbnail_url: string | null
+  is_published: boolean
+  created_at: string
+}
+
 const mockVideos: Video[] = [
   {
     id: '1',
@@ -64,8 +73,25 @@ export default function VideosPage() {
   const [viewMode, setViewMode] = useState<ViewMode>('list')
   const [videos, setVideos] = useState<Video[]>(mockVideos)
 
-  const handleVideoUploaded = (newVideo: Video) => {
-    setVideos((prev) => [newVideo, ...prev])
+  const mapVideoType = (videoType: string | null): Video['type'] => {
+    if (videoType === 'product-demo' || videoType === 'company-intro' || videoType === 'testimonial' || videoType === 'other') {
+      return videoType
+    }
+    return 'other'
+  }
+
+  const handleVideoUploaded = (newVideo: VideoRecord) => {
+    const mappedVideo: Video = {
+      id: String(newVideo.id),
+      title: newVideo.title,
+      type: mapVideoType(newVideo.video_type),
+      duration: 0,
+      thumbnail: newVideo.thumbnail_url || undefined,
+      uploadedAt: new Date(newVideo.created_at),
+      isPublished: newVideo.is_published,
+      languages: [{ code: 'en', title: newVideo.title }],
+    }
+    setVideos((prev) => [mappedVideo, ...prev])
     setViewMode('list')
   }
 
@@ -95,6 +121,7 @@ export default function VideosPage() {
       {/* Content */}
       {viewMode === 'upload' ? (
         <VideoUploader
+          supplierId={1}
           onSuccess={handleVideoUploaded}
           onCancel={() => setViewMode('list')}
         />

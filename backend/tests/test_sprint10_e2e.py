@@ -79,14 +79,18 @@ def _make_mock_db(execute_results: list | None = None, scalar_vals: list | None 
     return db
 
 
-def _make_user(is_admin=False, role="buyer"):
+def _make_user(is_admin=False, role="buyer", buyer_profile_id=None, supplier_profile_id=None):
+    if buyer_profile_id is None:
+        buyer_profile_id = 1 if role == "buyer" else None
+    if supplier_profile_id is None:
+        supplier_profile_id = 1 if role == "supplier" else None
     return SimpleNamespace(
         id=1,
         email="test@example.com",
         is_admin=is_admin,
         role=role,
-        buyer_profile_id=1,
-        supplier_profile_id=None,
+        buyer_profile_id=buyer_profile_id,
+        supplier_profile_id=supplier_profile_id,
     )
 
 
@@ -452,6 +456,16 @@ class TestMessagesEndpoints:
         _override(_make_user(), db)
         resp = client.post("/api/v1/messages/conversations", json={"supplier_id": 2})
         assert resp.status_code == 422  # missing initial_message
+
+    def test_start_conversation_supplier_rejected(self):
+        db = _make_mock_db()
+        _override(_make_user(role="supplier"), db)
+        resp = client.post(
+            "/api/v1/messages/conversations",
+            json={"supplier_id": 2, "initial_message": "Hello supplier!"},
+        )
+        assert resp.status_code == 400
+        assert resp.json()["detail"] == "Buyer profile not found"
 
     def test_get_messages_200(self):
         msg = self._make_msg()

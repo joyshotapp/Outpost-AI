@@ -18,8 +18,9 @@ config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# Set sqlalchemy.url from environment
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Set sqlalchemy.url from environment — ensure asyncpg driver is used
+_db_url = settings.DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
+config.set_main_option("sqlalchemy.url", _db_url)
 
 # Model's MetaData object for 'autogenerate' support
 target_metadata = Base.metadata
@@ -50,7 +51,7 @@ def do_run_migrations(connection: Connection) -> None:
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     configuration = config.get_section(config.config_ini_section)
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    configuration["sqlalchemy.url"] = _db_url
     configuration["sqlalchemy.echo"] = False
 
     connectable = async_engine_from_config(

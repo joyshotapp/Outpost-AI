@@ -22,9 +22,9 @@ def upgrade() -> None:
     # ── saved_suppliers ───────────────────────────────────────────────────────
     op.create_table(
         "saved_suppliers",
-        sa.Column("id", sa.Integer, primary_key=True, index=True),
-        sa.Column("buyer_id", sa.Integer, nullable=False, index=True),
-        sa.Column("supplier_id", sa.Integer, nullable=False, index=True),
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("buyer_id", sa.Integer, nullable=False),
+        sa.Column("supplier_id", sa.Integer, nullable=False),
         sa.Column("notes", sa.String(500), nullable=True),
         sa.Column("created_at", sa.DateTime, nullable=False),
         sa.Column("updated_at", sa.DateTime, nullable=False),
@@ -36,10 +36,10 @@ def upgrade() -> None:
     # ── direct_messages ───────────────────────────────────────────────────────
     op.create_table(
         "direct_messages",
-        sa.Column("id", sa.Integer, primary_key=True, index=True),
-        sa.Column("conversation_id", sa.Integer, nullable=False, index=True),
+        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("conversation_id", sa.Integer, nullable=False),
         # 'buyer' | 'supplier' | 'system'
-        sa.Column("sender_type", sa.String(20), nullable=False, index=True),
+        sa.Column("sender_type", sa.String(20), nullable=False),
         sa.Column("sender_id", sa.Integer, nullable=False),
         sa.Column("body", sa.Text, nullable=False),
         sa.Column("is_read", sa.Boolean, default=False, nullable=False),
